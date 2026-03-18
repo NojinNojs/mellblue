@@ -12,44 +12,75 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { formatCurrency } from '@/lib/format';
-import { type Book, type User } from '@/types';
+import { type Product, type ProductVariant, type User } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { ArrowLeft, BookOpen } from 'lucide-react';
+import { ArrowLeft, PackageOpen } from 'lucide-react';
 import { FormEventHandler, useEffect } from 'react';
 
-const conditionLabels: Record<string, string> = {
-    new: 'New',
-    like_new: 'Like New',
-    good: 'Good',
-    fair: 'Fair',
-    poor: 'Poor',
-};
+export interface CheckoutPageProps {
+    product: Product;
+    variant: ProductVariant | null;
+    user: User;
+}
 
-export default function Checkout({ book, user }: { book: Book; user: User }) {
-    const { data, setData, post, processing, errors } = useForm({
-        book_id: book.id,
+export default function Checkout({
+    product,
+    variant,
+    user,
+}: CheckoutPageProps) {
+    const { data, setData, post, processing, errors, transform } = useForm({
+        product_id: product.id,
+        variant_id: variant?.id || null,
         quantity: 1,
         shipping_name: (user.full_name as string) || user.name,
-        shipping_phone: (user.phone as string) || '',
-        shipping_address: (user.address as string) || '',
+        shipping_phone: (user.phone as string) || '+62',
+        address_street: '',
+        address_province: '',
+        address_city: '',
+        address_postal: '',
+        shipping_address: '',
+        shipping_city: '',
     });
 
+    const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        let val = e.target.value;
+        // Ensure it always starts with +62
+        if (!val.startsWith('+62')) {
+            val = '+62' + val.replace(/^[+0]+[62]*/, '');
+        }
+        // Only allow numbers after +62
+        const stripped = val.substring(3).replace(/[^\d]/g, '');
+        setData('shipping_phone', '+62' + stripped);
+    };
+
+    const isAvailable =
+        product.status === 'active' &&
+        (variant ? variant.stock > 0 : product.available_stock > 0);
+
     useEffect(() => {
-        if (book.status !== 'available') {
-            router.visit(`/books/${book.id}`, {
+        if (!isAvailable) {
+            router.visit(`/products/${product.public_id || product.slug}`, {
                 method: 'get',
-                data: {},
                 replace: true,
-                preserveState: false,
-                preserveScroll: false,
             });
         }
-    }, [book]);
+    }, [product, variant, isAvailable]);
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
+        
+        transform((data) => ({
+            ...data,
+            shipping_address: `${data.address_street}, ${data.address_city}, ${data.address_province} ${data.address_postal}`.trim(),
+            shipping_city: data.address_city,
+        }));
+
         post('/orders');
     };
+
+    const currentPrice = variant
+        ? product.base_price + variant.price_adjustment
+        : product.base_price;
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-muted/30 via-background to-muted/20">
@@ -64,7 +95,9 @@ export default function Checkout({ book, user }: { book: Book; user: User }) {
                         className="h-10 w-10 rounded-full border shadow-sm hover:shadow-md"
                         asChild
                     >
-                        <Link href={`/books/${book.id}`}>
+                        <Link
+                            href={`/products/${product.public_id || product.slug}`}
+                        >
                             <ArrowLeft className="h-5 w-5" />
                         </Link>
                     </Button>
@@ -123,26 +156,24 @@ export default function Checkout({ book, user }: { book: Book; user: User }) {
                                         )}
                                     </div>
 
-                                    <div className="space-y-3">
+                                    <div className="space-y-3 relative">
                                         <Label
                                             htmlFor="shipping_phone"
                                             className="text-base font-semibold"
                                         >
-                                            Phone Number
+                                            Phone / WhatsApp Number
                                         </Label>
                                         <Input
                                             id="shipping_phone"
-                                            placeholder="e.g. 08123456789"
-                                            className="h-12 text-base"
+                                            placeholder="+62 812 3456 7890"
+                                            className="h-12 text-base font-medium tracking-wide"
                                             value={data.shipping_phone}
-                                            onChange={(e) =>
-                                                setData(
-                                                    'shipping_phone',
-                                                    e.target.value,
-                                                )
-                                            }
+                                            onChange={handlePhoneChange}
                                             required
                                         />
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            Format: +62 followed by your number (e.g. +62812...)
+                                        </p>
                                         {errors.shipping_phone && (
                                             <p className="text-sm font-medium text-red-500">
                                                 {errors.shipping_phone}
@@ -150,31 +181,106 @@ export default function Checkout({ book, user }: { book: Book; user: User }) {
                                         )}
                                     </div>
 
+                                    <div className="space-y-5 rounded-lg border bg-muted/20 p-5 mt-6">
+                                        <h3 className="text-lg font-semibold border-b pb-3">Delivery Address</h3>
+                                        
+                                        <div className="space-y-3">
+                                            <Label htmlFor="address_street">
+                                                Street Address & Details
+                                            </Label>
+                                            <Textarea
+                                                id="address_street"
+                                                placeholder="Nama Jalan, Gedung, No. Rumah, RT/RW, Patokan"
+                                                className="min-h-[80px] resize-none text-base"
+                                                value={data.address_street}
+                                                onChange={(e) => setData('address_street', e.target.value)}
+                                                required
+                                            />
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="space-y-3">
+                                                <Label htmlFor="address_province">
+                                                    Province / Provinsi
+                                                </Label>
+                                                <Input
+                                                    id="address_province"
+                                                    placeholder="e.g. Jawa Barat"
+                                                    className="h-12"
+                                                    value={data.address_province}
+                                                    onChange={(e) => setData('address_province', e.target.value)}
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="space-y-3">
+                                                <Label htmlFor="address_city">
+                                                    City / Kota/Kabupaten
+                                                </Label>
+                                                <Input
+                                                    id="address_city"
+                                                    placeholder="e.g. Bandung"
+                                                    className="h-12"
+                                                    value={data.address_city}
+                                                    onChange={(e) => setData('address_city', e.target.value)}
+                                                    required
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            <Label htmlFor="address_postal">
+                                                Kode Pos (Postal Code)
+                                            </Label>
+                                            <Input
+                                                id="address_postal"
+                                                type="number"
+                                                placeholder="e.g. 40123"
+                                                className="h-12 w-full md:w-1/2"
+                                                value={data.address_postal}
+                                                onChange={(e) => setData('address_postal', e.target.value)}
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+
                                     <div className="space-y-3">
                                         <Label
-                                            htmlFor="shipping_address"
+                                            htmlFor="quantity"
                                             className="text-base font-semibold"
                                         >
-                                            Delivery Address
+                                            Quantity
                                         </Label>
-                                        <Textarea
-                                            id="shipping_address"
-                                            placeholder="Enter complete address including street name, RT/RW, kelurahan, kecamatan, city, and postal code"
-                                            className="min-h-[140px] resize-none text-base leading-relaxed"
-                                            value={data.shipping_address}
+                                        <Input
+                                            id="quantity"
+                                            type="number"
+                                            min="1"
+                                            max={
+                                                variant
+                                                    ? variant.stock
+                                                    : product.available_stock
+                                            }
+                                            className="h-12 w-32 text-base"
+                                            value={data.quantity}
                                             onChange={(e) =>
                                                 setData(
-                                                    'shipping_address',
-                                                    e.target.value,
+                                                    'quantity',
+                                                    parseInt(e.target.value) ||
+                                                        1,
                                                 )
                                             }
                                             required
                                         />
-                                        {errors.shipping_address && (
+                                        {errors.quantity && (
                                             <p className="text-sm font-medium text-red-500">
-                                                {errors.shipping_address}
+                                                {errors.quantity}
                                             </p>
                                         )}
+                                        <p className="text-xs text-muted-foreground">
+                                            Available stock:{' '}
+                                            {variant
+                                                ? variant.stock
+                                                : product.available_stock}
+                                        </p>
                                     </div>
                                 </form>
                             </CardContent>
@@ -194,44 +300,35 @@ export default function Checkout({ book, user }: { book: Book; user: User }) {
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-8 p-8">
-                                    {/* Book Details */}
+                                    {/* Product Details */}
                                     <div className="flex gap-6">
                                         <div className="aspect-[3/4] w-28 flex-shrink-0 overflow-hidden rounded-lg border-2 bg-muted shadow-md">
-                                            {book.images &&
-                                            book.images.length > 0 ? (
+                                            {product.images &&
+                                            product.images.length > 0 ? (
                                                 <img
-                                                    src={book.images[0].url}
-                                                    alt={book.title}
+                                                    src={product.images[0].url}
+                                                    alt={product.name}
                                                     className="h-full w-full object-cover"
                                                 />
                                             ) : (
-                                                <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-zinc-100 to-zinc-200 text-zinc-400 dark:from-zinc-800 dark:to-zinc-900 dark:text-zinc-600">
-                                                    <BookOpen className="h-10 w-10 opacity-40" />
-                                                    <span className="mt-2 text-xs font-medium tracking-wider uppercase opacity-40">
-                                                        No Cover
-                                                    </span>
+                                                <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-zinc-100 to-zinc-200 text-zinc-400">
+                                                    <PackageOpen className="h-10 w-10 opacity-40" />
                                                 </div>
                                             )}
                                         </div>
                                         <div className="flex flex-1 flex-col justify-between space-y-3 py-1">
                                             <div className="space-y-2">
                                                 <h3 className="line-clamp-2 text-lg leading-tight font-bold">
-                                                    {book.title}
+                                                    {product.name}
                                                 </h3>
-                                                <p className="text-sm font-medium text-muted-foreground">
-                                                    Condition:{' '}
-                                                    {conditionLabels[
-                                                        book.condition
-                                                    ] || book.condition}
+                                                {variant && (
+                                                    <p className="text-sm font-medium text-muted-foreground">
+                                                        Variant: {variant.name}
+                                                    </p>
+                                                )}
+                                                <p className="text-sm text-muted-foreground">
+                                                    {product.category}
                                                 </p>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <span className="inline-flex items-center rounded-full bg-primary/15 px-3 py-1 text-xs font-bold text-primary ring-1 ring-primary/20">
-                                                    Stock: 1
-                                                </span>
-                                                <span className="text-xs font-medium text-muted-foreground">
-                                                    Pre-loved
-                                                </span>
                                             </div>
                                         </div>
                                     </div>
@@ -245,7 +342,7 @@ export default function Checkout({ book, user }: { book: Book; user: User }) {
                                                 Price
                                             </span>
                                             <span className="font-semibold">
-                                                {formatCurrency(book.price)}
+                                                {formatCurrency(currentPrice)}
                                             </span>
                                         </div>
                                         <div className="flex justify-between text-base">
@@ -253,7 +350,7 @@ export default function Checkout({ book, user }: { book: Book; user: User }) {
                                                 Quantity
                                             </span>
                                             <span className="font-semibold">
-                                                1
+                                                {data.quantity}
                                             </span>
                                         </div>
                                         <div className="flex justify-between text-base">
@@ -274,7 +371,9 @@ export default function Checkout({ book, user }: { book: Book; user: User }) {
                                             Total
                                         </span>
                                         <span className="text-2xl font-bold text-primary">
-                                            {formatCurrency(book.price)}
+                                            {formatCurrency(
+                                                currentPrice * data.quantity,
+                                            )}
                                         </span>
                                     </div>
                                 </CardContent>
@@ -295,7 +394,9 @@ export default function Checkout({ book, user }: { book: Book; user: User }) {
                                         className="h-12 w-full border-2 text-base font-semibold"
                                         asChild
                                     >
-                                        <Link href={`/books/${book.id}`}>
+                                        <Link
+                                            href={`/products/${product.public_id || product.slug}`}
+                                        >
                                             Cancel
                                         </Link>
                                     </Button>

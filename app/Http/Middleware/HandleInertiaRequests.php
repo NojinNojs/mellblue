@@ -40,12 +40,18 @@ class HandleInertiaRequests extends Middleware
 
         return [
             ...parent::share($request),
+            'appData' => [
+                'name' => config('app.name'),
+                'phone' => env('APP_PHONE'),
+                'instagram' => env('APP_INSTAGRAM'),
+                'tiktok' => env('APP_TIKTOK'),
+            ],
             'name' => config('app.name'),
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
                 'user' => $request->user(),
             ],
-            'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'sidebarOpen' => !$request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }
 }

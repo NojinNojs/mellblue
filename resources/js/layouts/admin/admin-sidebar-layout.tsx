@@ -1,7 +1,7 @@
-import { AdminSidebar } from '@/components/admin-sidebar';
-import { AppContent } from '@/components/app-content';
-import { AppShell } from '@/components/app-shell';
-import { AppSidebarHeader } from '@/components/app-sidebar-header';
+import { AdminSidebar } from '@/components/layout/admin-sidebar';
+import { AppContent } from '@/components/layout/app-content';
+import { AppShell } from '@/components/layout/app-shell';
+import { AppSidebarHeader } from '@/components/layout/app-sidebar-header';
 import { Toaster } from '@/components/ui/sonner';
 import { type BreadcrumbItem } from '@/types';
 import { type PropsWithChildren } from 'react';

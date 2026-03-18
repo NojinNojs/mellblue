@@ -3,14 +3,17 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Book;
+use App\Models\Product;
 use App\Models\Order;
 use App\Models\User;
+use App\Services\ProductService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
+    public function __construct(private ProductService $productService) {}
+
     /**
      * Display the admin dashboard.
      */
@@ -20,10 +23,10 @@ class DashboardController extends Controller
         $stats = [
             'total_users' => User::count(),
             'total_customers' => User::where('role', 'customer')->count(),
-            'total_books' => Book::count(),
-            'available_books' => Book::where('status', 'available')->count(),
+            'total_products' => Product::count(),
+            'available_products' => Product::where('status', 'active')->count(),
             'total_orders' => Order::count(),
-            'pending_orders' => Order::where('status', 'pending')->count(),
+            'pending_orders' => Order::whereIn('status', ['pending_payment', 'waiting_confirmation'])->count(),
             'completed_orders' => Order::where('status', 'completed')->count(),
             'total_revenue' => Order::where('status', 'completed')->sum('total'),
         ];
@@ -36,26 +39,27 @@ class DashboardController extends Controller
             ->map(function ($order) {
                 return [
                     'id' => $order->id,
-                    'order_number' => $order->order_number ?? 'ORD-' . str_pad($order->id, 6, '0', STR_PAD_LEFT),
+                    'order_number' => $order->order_number,
                     'status' => $order->status,
                     'total_amount' => $order->total,
                     'created_at' => $order->created_at,
-                    'user' => $order->customer ? ['name' => $order->customer->name] : null,
+                    'user' => [
+                        'name' => $order->shipping_name ?: ($order->customer ? $order->customer->name : 'Unknown')
+                    ],
                 ];
             });
 
-        // Get recent books (last 5)
-        $recentBooks = Book::with('images')
+        // Get recent products (last 5)
+        $recentProducts = Product::with(['images', 'category:id,name'])
             ->orderBy('created_at', 'desc')
             ->take(5)
-            ->get();
+            ->get()
+            ->map(fn(Product $product) => $this->productService->formatProduct($product));
 
         return Inertia::render('admin/dashboard', [
             'stats' => $stats,
             'recentOrders' => $recentOrders,
-            'recentBooks' => $recentBooks,
+            'recentProducts' => $recentProducts,
         ]);
     }
 }
-
-

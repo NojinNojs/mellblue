@@ -2,205 +2,212 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Book;
 use App\Models\Order;
-use App\Models\OrderItem;
+use App\Models\Product;
+use App\Services\OrderService;
+use App\Services\ProductService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class OrderController extends Controller
 {
+    public function __construct(
+        private OrderService $orderService,
+        private ProductService $productService
+    ) {
+    }
+
+    /**
+     * List all orders for the authenticated user.
+     */
     public function index()
     {
-        $orders = Auth::user()->orders()
-            ->with(['orderItems.book.images'])
-            ->latest()
-            ->get()
-            ->map(function ($order) {
-                return [
-                    'id' => $order->id,
-                    'order_date' => $order->order_date,
-                    'status' => $order->status,
-                    'total' => $order->total,
-                    'order_items' => $order->orderItems->map(function ($item) {
-                        return [
-                            'id' => $item->id,
-                            'quantity' => $item->quantity,
-                            'price' => $item->price,
-                            'book' => [
-                                'id' => $item->book->id,
-                                'title' => $item->book->title,
-                                'images' => $item->book->images->map(fn($img) => [
-                                    'id' => $img->id,
-                                    'url' => asset($img->image_url)
-                                ])->values()->all()
-                            ]
-                        ];
-                    })->values()->all()
-                ];
-            });
+        $orders = $this->orderService->getUserOrders(Auth::id());
 
         return Inertia::render('orders/index', [
-            'orders' => $orders
+            'orders' => $orders,
         ]);
     }
 
+    /**
+     * Show the checkout page for a given product.
+     */
     public function create(Request $request)
     {
-        // Validate if user has profile info
-        $user = Auth::user();
-        if (!$user->full_name || !$user->phone || !$user->address) {
-            return redirect()->route('profile.edit')->with('error', 'Please complete your profile first.');
-        }
-
-        $bookId = $request->query('book_id');
-        $book = Book::with('images')->findOrFail($bookId);
+        $product = Product::with(['images', 'variants', 'category:id,name'])
+            ->where('public_id', $request->query('product_id'))
+            ->firstOrFail();
 
         return Inertia::render('checkout', [
-            'book' => [
-                'id' => $book->id,
-                'title' => $book->title,
-                'description' => $book->description,
-                'price' => $book->price,
-                'condition' => $book->condition,
-                'status' => $book->status,
-                'images' => $book->images->map(fn($img) => [
-                    'id' => $img->id,
-                    'url' => asset($img->image_url)
-                ]),
-            ],
-            'user' => $user
+            'product' => $this->productService->formatProduct($product),
+            'user' => Auth::user(),
         ]);
     }
 
+    /**
+     * Store a new order for the authenticated user.
+     */
     public function store(Request $request)
     {
-        $request->validate([
-            'book_id' => 'required|exists:books,id',
+        $validated = $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'variant_id' => 'nullable|exists:product_variants,id',
             'quantity' => 'required|integer|min:1',
-            'shipping_name' => 'required|string',
-            'shipping_phone' => 'required|string',
+            'shipping_name' => 'required|string|max:100',
+            'shipping_phone' => 'required|string|max:20',
             'shipping_address' => 'required|string',
+            'shipping_city' => 'required|string|max:100',
+            'notes' => 'nullable|string',
         ]);
 
-        DB::beginTransaction();
         try {
-            // Lock the book row for update to prevent race conditions
-            $book = Book::where('id', $request->book_id)->lockForUpdate()->firstOrFail();
-
-            // Check if book is available
-            if (!$book->isAvailable()) {
-                DB::rollBack();
-                return back()->with(
-                    'error',
-                    'This book is no longer available. It may have already been purchased or is currently reserved.'
-                );
-            }
-
-            $total = $book->price * $request->quantity;
-
-            // Generate unique code (last 3 digits)
-            $uniqueCode = rand(1, 999);
-            $totalWithCode = $total + $uniqueCode;
-
-            $order = Order::create([
-                'customer_id' => Auth::id(),
-                'order_date' => now(),
-                'status' => 'pending_payment',
-                'total' => $totalWithCode,
-                'shipping_name' => $request->shipping_name,
-                'shipping_phone' => $request->shipping_phone,
-                'shipping_address' => $request->shipping_address,
-                'shipping_method' => 'Free Shipping', // Default for now
-                'shipping_cost' => 0,
-                'unique_code' => $uniqueCode,
-                'payment_deadline' => now()->addHours(24),
-            ]);
-
-            OrderItem::create([
-                'order_id' => $order->id,
-                'book_id' => $book->id,
-                'quantity' => $request->quantity,
-                'price' => $book->price,
-            ]);
-
-            // Update book status to booked
-            $book->update(['status' => Book::STATUS_BOOKED]);
-
-            DB::commit();
-
-            return redirect()->route('orders.show', $order->id);
+            $order = $this->orderService->createOrder(Auth::id(), $validated);
+            return redirect()->route('orders.show', $order->order_number);
         } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->with('error', 'Failed to create order.');
+            return back()->with('error', $e->getMessage() ?: 'Failed to create order.');
         }
     }
 
+    /**
+     * Show a single order (only accessible by the order's customer).
+     */
     public function show(Order $order)
     {
         if ($order->customer_id !== Auth::id()) {
             abort(403);
         }
 
-        $order->load(['orderItems.book.images', 'paymentProof']);
+        $order->load(['items', 'latestPayment']);
 
         return Inertia::render('orders/show', [
             'order' => [
                 'id' => $order->id,
-                'order_date' => $order->order_date,
+                'order_number' => $order->order_number,
                 'status' => $order->status,
-                'total' => $order->total,
                 'shipping_name' => $order->shipping_name,
                 'shipping_phone' => $order->shipping_phone,
                 'shipping_address' => $order->shipping_address,
-                'shipping_method' => $order->shipping_method,
-                'tracking_number' => $order->tracking_number,
-                'unique_code' => $order->unique_code,
+                'shipping_city' => $order->shipping_city,
+                'subtotal' => $order->subtotal,
+                'shipping_cost' => $order->shipping_cost,
+                'total' => $order->total,
                 'payment_deadline' => $order->payment_deadline,
-                'order_items' => $order->orderItems->map(function ($item) {
-                    return [
-                        'id' => $item->id,
-                        'quantity' => $item->quantity,
-                        'price' => $item->price,
-                        'book' => [
-                            'id' => $item->book->id,
-                            'title' => $item->book->title,
-                            'images' => $item->book->images->map(fn($img) => [
-                                'id' => $img->id,
-                                'url' => asset($img->image_url)
-                            ])->values()->all()
-                        ]
-                    ];
-                })->values()->all(),
-                'payment_proof' => $order->paymentProof ? [
-                    'id' => $order->paymentProof->id,
-                    'proof_image_url' => $order->paymentProof->proof_image_url,
-                    'uploaded_at' => $order->paymentProof->uploaded_at,
-                    'sender_account_number' => $order->paymentProof->sender_account_number,
-                    'notes' => $order->paymentProof->notes,
-                ] : null
-            ]
+                'notes' => $order->notes,
+                'created_at' => $order->created_at?->toISOString(),
+                'items' => $order->items->map(fn($item) => [
+                    'id' => $item->id,
+                    'product_name' => $item->product_name,
+                    'variant_name' => $item->variant_name,
+                    'unit_price' => $item->unit_price,
+                    'quantity' => $item->quantity,
+                    'subtotal' => $item->subtotal,
+                    'image' => $item->product_snapshot['images'][0]['url'] ?? $item->product_snapshot['image'] ?? null,
+                    'product_snapshot' => $item->product_snapshot,
+                ])->values()->all(),
+                'payment' => $order->latestPayment ? [
+                    'proof_image_url' => $this->resolveImageUrl($order->latestPayment->proof_image_url),
+                    'method' => $order->latestPayment->method,
+                    'amount' => $order->latestPayment->amount,
+                    'status' => $order->latestPayment->status,
+                    'reject_reason' => $order->latestPayment->reject_reason,
+                ] : null,
+            ],
         ]);
     }
+
+    /**
+     * Cancel the given order (only by the customer).
+     */
     public function cancel(Order $order)
     {
         if ($order->customer_id !== Auth::id()) {
             abort(403);
         }
 
-        if (in_array($order->status, ['shipped', 'completed', 'cancelled'])) {
-            return back()->with('error', 'Order cannot be cancelled.');
+        try {
+            $this->orderService->cancelOrder($order);
+            return back()->with('success', 'Order cancelled successfully.');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Upload payment proof for a pending order.
+     */
+    public function uploadPayment(Request $request, Order $order)
+    {
+        if ($order->customer_id !== Auth::id()) {
+            abort(403);
         }
 
-        $order->update(['status' => 'cancelled']);
-
-        // Update book status back to available
-        foreach ($order->orderItems as $item) {
-            $item->book->updateStatusBasedOnOrders();
+        if (!in_array($order->status, ['pending', 'pending_payment'])) {
+            return back()->with('error', 'Payment cannot be uploaded for this order status.');
         }
 
-        return back()->with('success', 'Order cancelled successfully.');
+        $validated = $request->validate([
+            'sender_account_number' => 'required|string|max:255',
+            'proof_image' => 'required|image|max:5120', // 5MB max
+        ]);
+
+        $path = $request->file('proof_image')->store('payments', 'public');
+
+        \App\Models\Payment::create([
+            'order_id' => $order->id,
+            'type' => 'payment',
+            'method' => 'bank_transfer',
+            'proof_image_url' => $path,
+            'sender_account' => $validated['sender_account_number'],
+            'amount' => $order->total,
+            'status' => 'pending',
+            'created_at' => now(),
+        ]);
+
+        $order->update(['status' => 'waiting_confirmation']);
+
+        return back()->with('success', 'Payment proof uploaded successfully.');
+    }
+    /**
+     * Mark the order as completed (by the customer).
+     */
+    public function complete(Order $order)
+    {
+        if ($order->customer_id !== Auth::id()) {
+            abort(403);
+        }
+
+        if ($order->status !== 'shipping') {
+            return back()->with('error', 'Only orders that have been shipped can be marked as completed.');
+        }
+
+        $order->update(['status' => 'completed']);
+
+        return back()->with('success', 'Order marked as completed. Thank you for shopping with us!');
+    }
+
+    /**
+     * Download a PDF receipt for the given order.
+     */
+    public function receipt(Order $order)
+    {
+        if ($order->customer_id !== Auth::id()) {
+            abort(403);
+        }
+
+        // Only allow receipt for orders that are past pending payment
+        if (in_array($order->status, ['pending', 'pending_payment'])) {
+            return back()->with('error', 'Receipt is not available for unpaid orders.');
+        }
+
+        $order->load(['items', 'latestPayment']);
+
+        $payment = $order->latestPayment;
+
+        $pdf = Pdf::loadView('receipts.order', compact('order', 'payment'));
+        $pdf->setPaper('A4', 'portrait');
+
+        return $pdf->download("Receipt-{$order->order_number}.pdf");
     }
 }

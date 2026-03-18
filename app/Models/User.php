@@ -12,38 +12,29 @@ class User extends Authenticatable
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
+    protected static function booted()
+    {
+        static::creating(function ($user) {
+            if (empty($user->public_id)) {
+                $user->public_id = 'USR-' . strtoupper(\Illuminate\Support\Str::random(12));
+            }
+        });
+    }
+
     protected $fillable = [
+        'public_id',
         'name',
         'email',
         'password',
         'role',
-        'full_name',
         'phone',
-        'address',
-        'city',
-        'province',
-        'postal_code',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
+        'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -51,19 +42,23 @@ class User extends Authenticatable
         ];
     }
 
-    /**
-     * Get the books sold by this user (seller).
-     */
-    public function books()
+    // ─── Helpers ─────────────────────────────────────────────────────────────
+
+    public function isAdmin(): bool
     {
-        return $this->hasMany(Book::class, 'seller_id');
+        return $this->role === 'admin';
     }
 
-    /**
-     * Get the orders placed by this user (customer).
-     */
-    public function orders()
+    // ─── Relationships ────────────────────────────────────────────────────────
+
+    public function orders(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Order::class, 'customer_id');
     }
+
+    public function activityLogs(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ActivityLog::class);
+    }
 }
+

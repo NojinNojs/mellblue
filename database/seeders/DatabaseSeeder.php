@@ -20,8 +20,20 @@ class DatabaseSeeder extends Seeder
             [
                 'name' => 'Test User',
                 'password' => 'password',
-                'email_verified_at' => now(),
             ]
         );
+
+        $categories = [
+            ['name' => 'Fudgy Brownies', 'slug' => 'fudgy-brownies'],
+            ['name' => 'Ocean Milk', 'slug' => 'ocean-milk'],
+            ['name' => 'Bundle/Package', 'slug' => 'bundle-package'],
+        ];
+
+        foreach ($categories as $cat) {
+            \App\Models\Category::firstOrCreate(
+                ['slug' => $cat['slug']],
+                ['name' => $cat['name']]
+            );
+        }
     }
 }

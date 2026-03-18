@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
@@ -38,7 +37,7 @@ class UserController extends Controller
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
+            'password' => $validated['password'],
             'role' => $validated['role'],
         ]);
 
@@ -63,7 +62,7 @@ class UserController extends Controller
 
         // Only update password if provided
         if (!empty($validated['password'])) {
-            $user->password = Hash::make($validated['password']);
+            $user->password = $validated['password'];
         }
 
         $user->save();

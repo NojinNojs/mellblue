@@ -4,13 +4,13 @@ import { Head, useForm } from '@inertiajs/react';
 import { Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 
-import InputError from '@/components/input-error';
 import { PasswordStrengthIndicator } from '@/components/password-strength-indicator';
-import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import InputError from '@/components/ui/input-error';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import TextLink from '@/components/ui/text-link';
 import AuthLayout from '@/layouts/auth-layout';
 
 export default function Register() {
@@ -37,6 +37,7 @@ export default function Register() {
         <AuthLayout
             title="Create an account"
             description="Enter your details below to create your account"
+            bgImage="/ocean-milk-2.jpeg"
         >
             <Head title="Register" />
             <form onSubmit={submit} className="space-y-6">
@@ -153,7 +154,7 @@ export default function Register() {
 
                     <Button
                         type="submit"
-                        className="mt-2 h-11 w-full bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200"
+                        className="mt-2 h-11 w-full"
                         disabled={processing}
                         data-test="register-user-button"
                     >

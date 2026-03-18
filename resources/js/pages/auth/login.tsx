@@ -1,10 +1,10 @@
-import InputError from '@/components/input-error';
-import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
+import InputError from '@/components/ui/input-error';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import TextLink from '@/components/ui/text-link';
 import AuthLayout from '@/layouts/auth-layout';
 import { register } from '@/routes';
 import { store } from '@/routes/login';
@@ -24,11 +24,12 @@ export default function Login({ status, canRegister }: LoginProps) {
         <AuthLayout
             title="Welcome Back"
             description="Enter your email and password to access your account"
+            bgImage="/hero-brownie.png"
         >
             <Head title="Log in" />
 
             {status && (
-                <div className="mb-4 rounded-md bg-green-50 p-3 text-center text-sm font-medium text-green-600 dark:bg-green-950 dark:text-green-400">
+                <div className="mb-4 rounded-md bg-green-50 p-3 text-center text-sm font-medium text-green-600">
                     {status}
                 </div>
             )}
@@ -63,7 +64,9 @@ export default function Login({ status, canRegister }: LoginProps) {
                                 <div className="relative">
                                     <Input
                                         id="password"
-                                        type={showPassword ? 'text' : 'password'}
+                                        type={
+                                            showPassword ? 'text' : 'password'
+                                        }
                                         name="password"
                                         required
                                         autoComplete="current-password"
@@ -72,8 +75,10 @@ export default function Login({ status, canRegister }: LoginProps) {
                                     />
                                     <button
                                         type="button"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                        onClick={() =>
+                                            setShowPassword(!showPassword)
+                                        }
+                                        className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                                     >
                                         {showPassword ? (
                                             <EyeOff className="h-4 w-4" />
@@ -87,13 +92,10 @@ export default function Login({ status, canRegister }: LoginProps) {
 
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center space-x-2">
-                                    <Checkbox
-                                        id="remember"
-                                        name="remember"
-                                    />
+                                    <Checkbox id="remember" name="remember" />
                                     <Label
                                         htmlFor="remember"
-                                        className="text-sm font-normal cursor-pointer"
+                                        className="cursor-pointer text-sm font-normal"
                                     >
                                         Remember me
                                     </Label>
@@ -102,7 +104,7 @@ export default function Login({ status, canRegister }: LoginProps) {
 
                             <Button
                                 type="submit"
-                                className="w-full h-11 bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200"
+                                className="h-11 w-full"
                                 disabled={processing}
                                 data-test="login-button"
                             >

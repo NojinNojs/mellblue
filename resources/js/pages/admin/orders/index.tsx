@@ -1,380 +1,309 @@
-import { EmptyState } from '@/components/empty-state';
-import { OrderStatusBadge } from '@/components/order-status-badge';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import AdminLayout from '@/layouts/admin-layout';
-import { formatCurrency, formatOrderDate } from '@/lib/format';
-import { type Order } from '@/types';
+import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import {
-    AlertCircle,
-    BookOpen,
-    Clock,
-    DollarSign,
-    Eye,
-    Package,
-    Search,
-} from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { Eye, PackageOpen, ShoppingCart } from 'lucide-react';
 
-export default function OrderList({ orders }: { orders: { data: Order[] } }) {
-    const [searchQuery, setSearchQuery] = useState('');
-    const [statusFilter, setStatusFilter] = useState<string>('all');
+const breadcrumbs: BreadcrumbItem[] = [
+    {
+        title: 'Admin Dashboard',
+        href: '/admin',
+    },
+    {
+        title: 'Orders',
+        href: '/admin/orders',
+    },
+];
 
-    // Calculate statistics
-    const stats = useMemo(() => {
-        const total = orders.data.length;
-        const pendingPayment = orders.data.filter(
-            (o) => o.status === 'pending_payment',
-        ).length;
-        const waitingConfirmation = orders.data.filter(
-            (o) => o.status === 'waiting_confirmation',
-        ).length;
-        const revenue = orders.data
-            .filter((o) => o.status === 'completed')
-            .reduce((sum, o) => sum + o.total, 0);
+interface OrderItem {
+    id: number;
+    product_name: string;
+    variant_name: string | null;
+    unit_price: number;
+    quantity: number;
+    subtotal: number;
+    image: string | null;
+}
 
-        return { total, pendingPayment, waitingConfirmation, revenue };
-    }, [orders.data]);
+interface Order {
+    id: number;
+    order_number: string;
+    status: string;
+    total: number;
+    created_at: string;
+    customer?: {
+        name: string;
+        email: string;
+    };
+    items: OrderItem[];
+}
 
-    // Filter and search orders
-    const filteredOrders = useMemo(() => {
-        return orders.data.filter((order) => {
-            const matchesSearch =
-                searchQuery === '' ||
-                order.id.toString().includes(searchQuery) ||
-                order.customer.name
-                    .toLowerCase()
-                    .includes(searchQuery.toLowerCase()) ||
-                order.customer.email
-                    .toLowerCase()
-                    .includes(searchQuery.toLowerCase());
+export default function AdminOrderIndex({
+    orders,
+}: {
+    orders: {
+        data: Order[];
+        links?: { url: string | null; label: string; active: boolean }[];
+        current_page: number;
+        last_page: number;
+    };
+}) {
+    const getStatusBadge = (status: string) => {
+        const variants: Record<string, string> = {
+            pending:
+                'bg-zinc-100 text-zinc-800   border-zinc-200 ',
+            pending_payment:
+                'bg-yellow-100 text-yellow-800   border-yellow-200 ',
+            waiting_confirmation:
+                'bg-orange-100 text-orange-800   border-orange-200 ',
+            paid: 'bg-blue-100 text-blue-800   border-blue-200 ',
+            processing: 'bg-indigo-100 text-indigo-800   border-indigo-200 ',
+            shipping: 'bg-cyan-100 text-cyan-800   border-cyan-200 ',
+            completed: 'bg-green-100 text-green-800   border-green-200 ',
+            cancelled: 'bg-red-100 text-red-800   border-red-200 ',
+            payment_rejected: 'bg-red-200 text-red-900   border-red-300 ',
+        };
 
-            const matchesStatus =
-                statusFilter === 'all' || order.status === statusFilter;
+        return (
+            <Badge
+                variant="outline"
+                className={`${variants[status] || 'bg-gray-100 text-gray-800'} text-xs whitespace-nowrap capitalize`}
+            >
+                {status.replace('_', ' ')}
+            </Badge>
+        );
+    };
 
-            return matchesSearch && matchesStatus;
+    const formatDate = (dateString: string) => {
+        return new Date(dateString).toLocaleDateString('id-ID', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
         });
-    }, [orders.data, searchQuery, statusFilter]);
+    };
 
-    const statCards = [
-        {
-            title: 'Total Orders',
-            value: stats.total,
-            icon: Package,
-            description: 'All time orders',
-            color: 'text-blue-600 dark:text-blue-400',
-            bgColor: 'bg-blue-50/50 dark:bg-blue-900/20',
-            iconBg: 'bg-blue-100 dark:bg-blue-900/50',
-        },
-        {
-            title: 'Pending Payment',
-            value: stats.pendingPayment,
-            icon: Clock,
-            description: 'Awaiting payment',
-            color: 'text-yellow-600 dark:text-yellow-400',
-            bgColor: 'bg-yellow-50/50 dark:bg-yellow-900/20',
-            iconBg: 'bg-yellow-100 dark:bg-yellow-900/50',
-        },
-        {
-            title: 'Needs Review',
-            value: stats.waitingConfirmation,
-            icon: AlertCircle,
-            description: 'Payment proofs to verify',
-            color: 'text-orange-600 dark:text-orange-400',
-            bgColor: 'bg-orange-50/50 dark:bg-orange-900/20',
-            iconBg: 'bg-orange-100 dark:bg-orange-900/50',
-        },
-        {
-            title: 'Total Revenue',
-            value: formatCurrency(stats.revenue),
-            icon: DollarSign,
-            description: 'Completed orders',
-            color: 'text-green-600 dark:text-green-400',
-            bgColor: 'bg-green-50/50 dark:bg-green-900/20',
-            iconBg: 'bg-green-100 dark:bg-green-900/50',
-        },
-    ];
+    const formatPrice = (price: number) => {
+        return `Rp ${Math.round(price).toLocaleString('id-ID', {
+            maximumFractionDigits: 0,
+        })}`;
+    };
 
     return (
-        <AdminLayout>
-            <Head title="Orders Management" />
-            <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-4 md:p-6">
-                {/* Stats Cards */}
-                <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-                    {statCards.map((card) => {
-                        const Icon = card.icon;
-                        return (
-                            <Card
-                                key={card.title}
-                                className={`overflow-hidden border-0 ${card.bgColor} shadow-sm`}
-                            >
-                                <CardContent className="p-4 sm:p-5">
-                                    <div className="flex items-center gap-3 sm:gap-4">
-                                        <div
-                                            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl sm:h-12 sm:w-12 ${card.iconBg}`}
-                                        >
-                                            <Icon
-                                                className={`h-5 w-5 sm:h-6 sm:w-6 ${card.color}`}
-                                            />
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                            <p className="truncate text-xs font-medium text-muted-foreground sm:text-sm">
-                                                {card.title}
-                                            </p>
-                                            <p className="truncate text-lg font-bold sm:text-2xl">
-                                                {card.value}
-                                            </p>
-                                            <p className="hidden text-xs text-muted-foreground sm:block">
-                                                {card.description}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        );
-                    })}
+        <>
+            <Head title="Manage Orders" />
+            <div className="flex h-full flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-6">
+                <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+                            Orders
+                        </h1>
+                        <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
+                            <ShoppingCart className="h-4 w-4" />
+                            Manage and process customer orders
+                        </p>
+                    </div>
                 </div>
 
-                {/* Orders Table */}
-                <div className="overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
-                    {/* Header */}
-                    <div className="flex flex-col gap-4 border-b border-sidebar-border/70 bg-sidebar p-6 dark:border-sidebar-border">
-                        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                            <div>
-                                <h2 className="text-lg font-semibold">
-                                    Manage Orders
-                                </h2>
-                                <p className="text-sm text-muted-foreground">
-                                    View and manage customer orders
+                <Card className="flex-1 shadow-sm">
+                    <CardHeader className="border-b px-4 py-3 sm:px-6 sm:py-4">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <CardTitle className="text-base sm:text-lg">
+                                Order List
+                            </CardTitle>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                        {orders.data && orders.data.length > 0 ? (
+                            <div className="overflow-x-auto">
+                                <Table>
+                                    <TableHeader className="bg-muted/50">
+                                        <TableRow>
+                                            <TableHead className="w-[120px] whitespace-nowrap">
+                                                Order ID
+                                            </TableHead>
+                                            <TableHead className="min-w-[200px]">
+                                                Customer
+                                            </TableHead>
+                                            <TableHead className="min-w-[250px]">
+                                                Items
+                                            </TableHead>
+                                            <TableHead className="w-[120px] text-right">
+                                                Total
+                                            </TableHead>
+                                            <TableHead className="w-[120px]">
+                                                Status
+                                            </TableHead>
+                                            <TableHead className="w-[150px] whitespace-nowrap">
+                                                Date
+                                            </TableHead>
+                                            <TableHead className="w-[80px] text-right">
+                                                Actions
+                                            </TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {orders.data.map((order) => (
+                                            <TableRow key={order.id}>
+                                                <TableCell className="font-medium">
+                                                    #
+                                                    {order.order_number ||
+                                                        String(
+                                                            order.id,
+                                                        ).padStart(6, '0')}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex flex-col">
+                                                        <span className="font-medium text-foreground">
+                                                            {order.customer
+                                                                ?.name ||
+                                                                'Unknown'}
+                                                        </span>
+                                                        <span className="text-xs text-muted-foreground">
+                                                            {order.customer
+                                                                ?.email ||
+                                                                'N/A'}
+                                                        </span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted">
+                                                            {order.items &&
+                                                            order.items[0]
+                                                                ?.image ? (
+                                                                <img
+                                                                    src={
+                                                                        order
+                                                                            .items[0]
+                                                                            .image
+                                                                    }
+                                                                    alt={
+                                                                        order
+                                                                            .items[0]
+                                                                            .product_name
+                                                                    }
+                                                                    className="h-full w-full object-cover"
+                                                                />
+                                                            ) : (
+                                                                <PackageOpen className="h-5 w-5 text-muted-foreground" />
+                                                            )}
+                                                        </div>
+                                                        <div className="min-w-0 flex-1">
+                                                            <p className="truncate text-sm font-medium">
+                                                                {order
+                                                                    .items?.[0]
+                                                                    ?.product_name ||
+                                                                    'Unknown Product'}
+                                                            </p>
+                                                            <p className="truncate text-xs text-muted-foreground">
+                                                                {order.items
+                                                                    ?.length > 1
+                                                                    ? `+ ${order.items.length - 1} more items`
+                                                                    : order
+                                                                          .items?.[0]
+                                                                          ?.variant_name ||
+                                                                      '1 item'}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-right font-medium">
+                                                    {formatPrice(order.total)}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {getStatusBadge(
+                                                        order.status,
+                                                    )}
+                                                </TableCell>
+                                                <TableCell className="text-xs text-muted-foreground">
+                                                    {formatDate(
+                                                        order.created_at,
+                                                    )}
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <Link
+                                                        href={`/admin/orders/${order.order_number || order.id}`}
+                                                    >
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 hover:bg-violet-50 hover:text-violet-600"
+                                                            title="View Order"
+                                                        >
+                                                            <Eye className="h-4 w-4" />
+                                                        </Button>
+                                                    </Link>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center py-16 text-center">
+                                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted/50">
+                                    <ShoppingCart className="h-8 w-8 text-muted-foreground/50" />
+                                </div>
+                                <h3 className="mt-4 text-lg font-semibold">
+                                    No orders found
+                                </h3>
+                                <p className="mt-2 text-sm text-muted-foreground">
+                                    There are no orders matching your criteria.
                                 </p>
                             </div>
-                            <div className="flex flex-col gap-2 md:flex-row">
-                                <div className="relative">
-                                    <Search className="absolute top-2.5 left-2.5 h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                        placeholder="Search orders..."
-                                        className="pl-8 md:w-[250px]"
-                                        value={searchQuery}
-                                        onChange={(e) =>
-                                            setSearchQuery(e.target.value)
-                                        }
+                        )}
+                    </CardContent>
+                </Card>
+
+                {/* Pagination (can be added later if needed based on the response format) */}
+                {orders.links && orders.links.length > 3 && (
+                    <div className="flex items-center justify-center py-4">
+                        <div className="flex gap-1">
+                            {orders.links.map(
+                                (
+                                    link: {
+                                        url: string | null;
+                                        label: string;
+                                        active: boolean;
+                                    },
+                                    i: number,
+                                ) => (
+                                    <Link
+                                        key={i}
+                                        href={link.url || '#'}
+                                        className={`flex h-9 min-w-[36px] items-center justify-center rounded-md border px-3 text-sm transition-colors ${
+                                            link.active
+                                                ? 'bg-primary font-medium text-primary-foreground'
+                                                : link.url
+                                                  ? 'bg-background text-foreground hover:bg-muted'
+                                                  : 'cursor-not-allowed bg-muted/50 opacity-50'
+                                        }`}
+                                        dangerouslySetInnerHTML={{
+                                            __html: link.label,
+                                        }}
                                     />
-                                </div>
-                                <Select
-                                    value={statusFilter}
-                                    onValueChange={setStatusFilter}
-                                >
-                                    <SelectTrigger className="md:w-[180px]">
-                                        <SelectValue placeholder="All Status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">
-                                            All Status
-                                        </SelectItem>
-                                        <SelectItem value="pending_payment">
-                                            Pending Payment
-                                        </SelectItem>
-                                        <SelectItem value="waiting_confirmation">
-                                            Waiting Confirmation
-                                        </SelectItem>
-                                        <SelectItem value="paid">
-                                            Paid
-                                        </SelectItem>
-                                        <SelectItem value="processing">
-                                            Processing
-                                        </SelectItem>
-                                        <SelectItem value="shipped">
-                                            Shipped
-                                        </SelectItem>
-                                        <SelectItem value="completed">
-                                            Completed
-                                        </SelectItem>
-                                        <SelectItem value="cancelled">
-                                            Cancelled
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                                ),
+                            )}
                         </div>
                     </div>
-
-                    {/* Table Content */}
-                    {filteredOrders.length === 0 ? (
-                        <div className="p-8">
-                            <EmptyState
-                                icon={Package}
-                                title={
-                                    searchQuery || statusFilter !== 'all'
-                                        ? 'No orders found'
-                                        : 'No orders yet'
-                                }
-                                description={
-                                    searchQuery || statusFilter !== 'all'
-                                        ? 'Try adjusting your search or filter criteria'
-                                        : 'Orders will appear here once customers start purchasing'
-                                }
-                            />
-                        </div>
-                    ) : (
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead className="border-b border-sidebar-border/70 bg-sidebar dark:border-sidebar-border">
-                                    <tr>
-                                        <th className="p-4 text-left text-sm font-medium">
-                                            Order ID
-                                        </th>
-                                        <th className="p-4 text-left text-sm font-medium">
-                                            Product
-                                        </th>
-                                        <th className="p-4 text-left text-sm font-medium">
-                                            Customer
-                                        </th>
-                                        <th className="p-4 text-left text-sm font-medium">
-                                            Date
-                                        </th>
-                                        <th className="p-4 text-left text-sm font-medium">
-                                            Total
-                                        </th>
-                                        <th className="p-4 text-left text-sm font-medium">
-                                            Status
-                                        </th>
-                                        <th className="p-4 text-right text-sm font-medium">
-                                            Actions
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {filteredOrders.map((order) => (
-                                        <tr
-                                            key={order.id}
-                                            className="border-b border-sidebar-border/70 transition-colors hover:bg-sidebar/50 dark:border-sidebar-border"
-                                        >
-                                            <td className="p-4">
-                                                <span className="font-medium">
-                                                    #{order.id}
-                                                </span>
-                                            </td>
-                                            <td className="p-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="h-12 w-9 flex-shrink-0 overflow-hidden rounded-md border bg-muted">
-                                                        {order.order_items?.[0]
-                                                            ?.book?.images?.[0]
-                                                            ?.url ? (
-                                                            <img
-                                                                src={
-                                                                    order
-                                                                        .order_items[0]
-                                                                        .book
-                                                                        .images[0]
-                                                                        .url
-                                                                }
-                                                                alt={
-                                                                    order
-                                                                        .order_items[0]
-                                                                        .book
-                                                                        .title
-                                                                }
-                                                                className="h-full w-full object-cover"
-                                                            />
-                                                        ) : (
-                                                            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-zinc-100 to-zinc-200 text-zinc-400 dark:from-zinc-800 dark:to-zinc-900 dark:text-zinc-600">
-                                                                <BookOpen className="h-4 w-4 opacity-40" />
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    <div className="flex flex-col">
-                                                        <span className="line-clamp-1 max-w-[200px] font-medium">
-                                                            {order
-                                                                .order_items?.[0]
-                                                                ?.book?.title ||
-                                                                'Unknown Book'}
-                                                        </span>
-                                                        {order.order_items
-                                                            .length > 1 && (
-                                                            <span className="text-xs text-muted-foreground">
-                                                                +
-                                                                {order
-                                                                    .order_items
-                                                                    .length -
-                                                                    1}{' '}
-                                                                more item
-                                                                {order
-                                                                    .order_items
-                                                                    .length > 2
-                                                                    ? 's'
-                                                                    : ''}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="p-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-medium text-primary">
-                                                        {order.customer.name
-                                                            .charAt(0)
-                                                            .toUpperCase()}
-                                                    </div>
-                                                    <div>
-                                                        <div className="font-medium">
-                                                            {
-                                                                order.customer
-                                                                    .name
-                                                            }
-                                                        </div>
-                                                        <div className="text-sm text-muted-foreground">
-                                                            {
-                                                                order.customer
-                                                                    .email
-                                                            }
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="p-4 text-muted-foreground">
-                                                {formatOrderDate(
-                                                    order.order_date,
-                                                )}
-                                            </td>
-                                            <td className="p-4 font-medium">
-                                                {formatCurrency(order.total)}
-                                            </td>
-                                            <td className="p-4">
-                                                <OrderStatusBadge
-                                                    status={order.status}
-                                                />
-                                            </td>
-                                            <td className="p-4 text-right">
-                                                <Button
-                                                    asChild
-                                                    variant="ghost"
-                                                    size="sm"
-                                                >
-                                                    <Link
-                                                        href={`/admin/orders/${order.id}`}
-                                                    >
-                                                        <Eye className="mr-2 h-4 w-4" />
-                                                        View
-                                                    </Link>
-                                                </Button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-                </div>
+                )}
             </div>
-        </AdminLayout>
+        </>
     );
 }
+
+AdminOrderIndex.layout = (page: React.ReactNode) => (
+    <AdminLayout breadcrumbs={breadcrumbs}>{page}</AdminLayout>
+);

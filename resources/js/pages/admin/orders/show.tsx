@@ -1,636 +1,365 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
-import {
-    Dialog,
-    DialogClose,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Textarea } from '@/components/ui/textarea';
 import AdminLayout from '@/layouts/admin-layout';
-import { formatCurrency } from '@/lib/format';
-import { type Order } from '@/types';
-import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, BookOpen, CheckCircle, Clock, XCircle } from 'lucide-react';
-import { FormEventHandler, useState } from 'react';
+import { type BreadcrumbItem } from '@/types';
+import { Head, Link, router } from '@inertiajs/react';
+import { ArrowLeft, Clock, MapPin, User } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 
-export default function AdminOrderDetail({ order }: { order: Order }) {
-    const {
-        data: verifyData,
-        setData: setVerifyData,
-        post: postVerify,
-        processing: verifyProcessing,
-    } = useForm({
-        action: '',
-        notes: '',
-    });
+// Extracted Components
+import { AdminOrderSummaryCard } from '@/components/admin/orders/admin-order-summary-card';
+import { PaymentVerificationCard } from '@/components/admin/orders/payment-verification-card';
 
-    const {
-        data: shipData,
-        setData: setShipData,
-        post: postShip,
-        processing: shipProcessing,
-    } = useForm({
-        tracking_number: '',
-        shipping_method: 'JNE',
-    });
+interface OrderItem {
+    id: number;
+    product_name: string;
+    variant_name: string | null;
+    unit_price: number;
+    quantity: number;
+    subtotal: number;
+    image: string | null;
+}
 
-    const {
-        data: statusData,
-        setData: setStatusData,
-        patch: patchStatus,
-        processing: statusProcessing,
-    } = useForm({
-        status: order.status,
-    });
+interface Payment {
+    id: number;
+    type: string;
+    method: string;
+    proof_image_url: string;
+    sender_account: string;
+    amount: number;
+    status: string;
+    reject_reason: string | null;
+    verified_at: string | null;
+    verifier: string | null;
+}
 
-    const [isVerifyDialogOpen, setIsVerifyDialogOpen] = useState(false);
-    const [verifyAction, setVerifyAction] = useState<
-        'approve' | 'reject' | null
-    >(null);
-    const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
-    const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
+interface Order {
+    id: number;
+    order_number: string;
+    status: string;
+    shipping_name: string;
+    shipping_phone: string;
+    shipping_address: string;
+    shipping_city: string;
+    subtotal: number;
+    shipping_cost: number;
+    total: number;
+    payment_deadline: string;
+    notes: string | null;
+    created_at: string;
+    customer: {
+        id: number;
+        name: string;
+        email: string;
+    } | null;
+    items: OrderItem[];
+    latest_payment: Payment | null;
+}
 
-    const handleVerifyClick = (action: 'approve' | 'reject') => {
-        setVerifyAction(action);
-        setIsVerifyDialogOpen(true);
-    };
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Admin Dashboard', href: '/admin' },
+    { title: 'Orders', href: '/admin/orders' },
+    { title: 'Order Details', href: '#' },
+];
 
-    const confirmVerify = () => {
-        if (verifyAction) {
-            setVerifyData('action', verifyAction);
-            postVerify(`/admin/orders/${order.id}/verify`, {
-                onSuccess: () => setIsVerifyDialogOpen(false),
-            });
+export default function AdminOrderShow({ order }: { order: Order }) {
+    const [isVerifying, setIsVerifying] = useState(false);
+    const [action, setAction] = useState<'approve' | 'reject' | null>(null);
+    const [rejectReason, setRejectReason] = useState('');
+
+    const handleVerify = (selectedAction: 'approve' | 'reject') => {
+        if (selectedAction === 'reject' && !rejectReason.trim()) {
+            toast.error('Please provide a reason for rejection.');
+            return;
         }
+
+        setIsVerifying(true);
+        router.post(
+            `/admin/orders/${order.order_number}/verify`,
+            { action: selectedAction, reject_reason: rejectReason },
+            {
+                onSuccess: () => {
+                    toast.success(
+                        `Payment has been ${selectedAction}d successfully.`,
+                    );
+                    setIsVerifying(false);
+                    setAction(null);
+                },
+                onError: (errors) => {
+                    toast.error(
+                        errors.error ||
+                            'Failed to verify payment. Please try again.',
+                    );
+                    setIsVerifying(false);
+                },
+                preserveScroll: true,
+            },
+        );
     };
 
-    const handleShip: FormEventHandler = (e) => {
-        e.preventDefault();
-        postShip(`/admin/orders/${order.id}/ship`);
+    const handleUpdateStatus = (status: string) => {
+        router.patch(
+            `/admin/orders/${order.order_number}/status`,
+            { status },
+            {
+                onSuccess: () =>
+                    toast.success('Order status updated successfully.'),
+                onError: () => toast.error('Failed to update order status.'),
+                preserveScroll: true,
+            },
+        );
     };
 
-    const handleStatusUpdateClick = (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsStatusDialogOpen(true);
+    const getStatusBadge = (status: string) => {
+        const variants: Record<string, string> = {
+            pending: 'bg-zinc-100 text-zinc-800 border-zinc-200',
+            pending_payment: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+            waiting_confirmation:
+                'bg-orange-100 text-orange-800 border-orange-200',
+            paid: 'bg-blue-100 text-blue-800 border-blue-200',
+            processing: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+            shipping: 'bg-cyan-100 text-cyan-800 border-cyan-200',
+            completed: 'bg-green-100 text-green-800 border-green-200',
+            cancelled: 'bg-red-100 text-red-800 border-red-200',
+            payment_rejected: 'bg-red-200 text-red-900 border-red-300',
+        };
+
+        return (
+            <Badge
+                variant="outline"
+                className={`${variants[status] || 'bg-gray-100 text-gray-800'} border px-2 py-1 text-xs capitalize sm:px-3 sm:text-sm`}
+            >
+                {status.replace('_', ' ')}
+            </Badge>
+        );
     };
 
-    const confirmStatusUpdate = () => {
-        patchStatus(`/admin/orders/${order.id}/status`, {
-            onSuccess: () => setIsStatusDialogOpen(false),
+    const formatDate = (dateString: string | undefined | null) => {
+        if (!dateString) return 'N/A';
+        return new Date(dateString).toLocaleDateString('id-ID', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
         });
     };
 
-    const handleCompleteClick = () => {
-        setStatusData('status', 'completed');
-        setIsCompleteDialogOpen(true);
-    };
-
-    const confirmComplete = () => {
-        patchStatus(`/admin/orders/${order.id}/status`, {
-            onSuccess: () => setIsCompleteDialogOpen(false),
-        });
+    const formatPrice = (price: number | undefined) => {
+        if (price === undefined) return 'Rp 0';
+        return `Rp ${Math.round(price).toLocaleString('id-ID', {
+            maximumFractionDigits: 0,
+        })}`;
     };
 
     return (
-        <AdminLayout>
-            <Head title={`Order #${order.id}`} />
-            <div className="flex h-full flex-1 flex-col gap-6 rounded-xl p-4 md:p-6">
-                {/* Header with Back Button */}
-                <div className="flex items-center gap-4">
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        asChild
-                        className="h-10 w-10 shrink-0 rounded-full border shadow-sm hover:shadow-md"
-                    >
+        <>
+            <Head title={`Order #${order.order_number || order.id}`} />
+            <div className="flex h-full flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-6">
+                {/* Header Actions */}
+                <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-4">
                         <Link href="/admin/orders">
-                            <ArrowLeft className="h-5 w-5" />
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-9 w-9 shrink-0 rounded-full bg-background shadow-sm hover:bg-muted"
+                            >
+                                <ArrowLeft className="h-4 w-4" />
+                            </Button>
                         </Link>
-                    </Button>
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-                            Order #{order.id}
-                        </h1>
-                        <p className="text-sm text-muted-foreground sm:text-base">
-                            {order.customer.name} ({order.customer.email})
-                        </p>
+                        <div className="min-w-0">
+                            <h1 className="truncate text-xl font-bold tracking-tight text-foreground sm:text-2xl md:text-3xl">
+                                Order #{order.order_number}
+                            </h1>
+                            <p className="mt-1 flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+                                <Clock className="h-3.5 w-3.5" />
+                                {formatDate(
+                                    order.created_at ||
+                                        new Date().toISOString(),
+                                )}
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex shrink-0 items-center justify-start sm:justify-end">
+                        {getStatusBadge(order.status)}
                     </div>
                 </div>
 
-                <div className="grid gap-6 md:grid-cols-2">
-                    <div className="space-y-6">
-                        {/* Order Details */}
-                        <Card>
-                            <CardHeader className="p-6">
-                                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                                    <div className="space-y-1">
-                                        <CardTitle className="text-xl">
-                                            Order Details #{order.id}
-                                        </CardTitle>
-                                        <CardDescription className="text-base">
-                                            Placed by {order.customer.name} (
-                                            {order.customer.email})
-                                        </CardDescription>
-                                    </div>
-                                    <Badge
-                                        className="w-fit px-3 py-1 text-sm"
-                                        variant={
-                                            order.status === 'paid' ||
-                                            order.status === 'completed'
-                                                ? 'default'
-                                                : order.status ===
-                                                        'cancelled' ||
-                                                    order.status ===
-                                                        'payment_rejected'
-                                                  ? 'destructive'
-                                                  : 'secondary'
-                                        }
-                                    >
-                                        {order.status
-                                            .replace('_', ' ')
-                                            .toUpperCase()}
-                                    </Badge>
-                                </div>
-                            </CardHeader>
-                            <CardContent className="space-y-6 p-6 pt-0">
-                                <div className="space-y-2">
-                                    <h4 className="font-semibold">
-                                        Shipping To
-                                    </h4>
-                                    <div className="text-sm text-muted-foreground">
-                                        <p>{order.shipping_name}</p>
-                                        <p>{order.shipping_phone}</p>
-                                        <p>{order.shipping_address}</p>
-                                    </div>
-                                </div>
-                                <Separator />
-                                <div className="space-y-4">
-                                    <h4 className="font-semibold">Items</h4>
-                                    {order.order_items.map((item) => (
-                                        <div
-                                            key={item.id}
-                                            className="flex items-start gap-4 py-2"
-                                        >
-                                            {/* Book Image */}
-                                            <div className="h-16 w-12 flex-shrink-0 overflow-hidden rounded-md border bg-muted">
-                                                {item.book.images &&
-                                                item.book.images.length > 0 ? (
-                                                    <img
-                                                        src={
-                                                            item.book.images[0]
-                                                                .url
-                                                        }
-                                                        alt={item.book.title}
-                                                        className="h-full w-full object-cover"
-                                                    />
-                                                ) : (
-                                                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-zinc-100 to-zinc-200 text-zinc-400 dark:from-zinc-800 dark:to-zinc-900 dark:text-zinc-600">
-                                                        <BookOpen className="h-4 w-4 opacity-40" />
-                                                    </div>
-                                                )}
-                                            </div>
+                <div className="grid gap-4 sm:gap-6 lg:grid-cols-3 xl:gap-8">
+                    {/* Left Column - Order details */}
+                    <div className="flex flex-col gap-4 sm:gap-6 lg:col-span-2">
+                        <AdminOrderSummaryCard
+                            items={order.items}
+                            subtotal={order.subtotal}
+                            shippingCost={order.shipping_cost}
+                            total={order.total}
+                            formatPrice={formatPrice}
+                        />
 
-                                            <div className="flex flex-1 flex-col gap-1">
-                                                <span className="line-clamp-2 font-medium">
-                                                    {item.book.title}
-                                                </span>
-                                                <span className="text-sm text-muted-foreground">
-                                                    {item.quantity} x{' '}
-                                                    {formatCurrency(item.price)}
-                                                </span>
-                                            </div>
-                                            <span className="font-medium">
-                                                {formatCurrency(
-                                                    item.price * item.quantity,
-                                                )}
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
-                                <Separator />
-                                <div className="flex justify-between text-lg font-bold">
-                                    <span>Total Amount</span>
-                                    <span>{formatCurrency(order.total)}</span>
-                                </div>
-                            </CardContent>
-                        </Card>
+                        {/* Payment Verification Section */}
+                        {order.latest_payment && (
+                            <PaymentVerificationCard
+                                orderStatus={order.status}
+                                payment={order.latest_payment}
+                                action={action}
+                                setAction={setAction}
+                                rejectReason={rejectReason}
+                                setRejectReason={setRejectReason}
+                                isVerifying={isVerifying}
+                                handleVerify={handleVerify}
+                                formatPrice={formatPrice}
+                                formatDate={formatDate}
+                                getStatusBadge={getStatusBadge}
+                            />
+                        )}
 
-                        {/* Shipping Action */}
-                        {['paid', 'processing'].includes(order.status) && (
-                            <Card>
-                                <CardHeader className="p-6">
-                                    <CardTitle className="text-xl">
-                                        Process Shipment
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent className="p-6 pt-0">
-                                    <form
-                                        onSubmit={handleShip}
-                                        className="space-y-4"
-                                    >
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="shipping_method">
-                                                Courier
-                                            </Label>
-                                            <Select
-                                                defaultValue={
-                                                    shipData.shipping_method
-                                                }
-                                                onValueChange={(val) =>
-                                                    setShipData(
-                                                        'shipping_method',
-                                                        val,
-                                                    )
-                                                }
-                                            >
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Select courier" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="JNE">
-                                                        JNE
-                                                    </SelectItem>
-                                                    <SelectItem value="JNT">
-                                                        JNT
-                                                    </SelectItem>
-                                                    <SelectItem value="SiCepat">
-                                                        SiCepat
-                                                    </SelectItem>
-                                                    <SelectItem value="Pos Indonesia">
-                                                        Pos Indonesia
-                                                    </SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="tracking_number">
-                                                Tracking Number
-                                            </Label>
-                                            <Input
-                                                id="tracking_number"
-                                                value={shipData.tracking_number}
-                                                onChange={(e) =>
-                                                    setShipData(
-                                                        'tracking_number',
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                required
-                                            />
-                                        </div>
-                                        <Button
-                                            type="submit"
-                                            disabled={shipProcessing}
-                                            className="w-full"
-                                            size="lg"
-                                        >
-                                            Mark as Shipped
-                                        </Button>
-                                    </form>
+                        {!order.latest_payment && (
+                            <Card className="overflow-hidden border-dashed shadow-sm">
+                                <CardContent className="flex flex-col items-center justify-center py-10 text-center">
+                                    <Clock className="mb-3 h-10 w-10 text-yellow-500 opacity-50" />
+                                    <h3 className="text-lg font-medium text-foreground">
+                                        Awaiting Payment
+                                    </h3>
+                                    <p className="mt-1 text-sm text-muted-foreground">
+                                        The customer has not uploaded a payment
+                                        proof yet.
+                                    </p>
                                 </CardContent>
                             </Card>
                         )}
-
-                        {/* Status Management */}
-                        <Card>
-                            <CardHeader className="p-6">
-                                <CardTitle className="text-xl">
-                                    Manage Status
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-4 p-6 pt-0">
-                                <form
-                                    onSubmit={handleStatusUpdateClick}
-                                    className="space-y-4"
-                                >
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="status">
-                                            Order Status
-                                        </Label>
-                                        <Select
-                                            value={statusData.status}
-                                            onValueChange={(val) =>
-                                                setStatusData(
-                                                    'status',
-                                                    val as Order['status'],
-                                                )
-                                            }
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select status" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="pending_payment">
-                                                    Pending Payment
-                                                </SelectItem>
-                                                <SelectItem value="waiting_confirmation">
-                                                    Waiting Confirmation
-                                                </SelectItem>
-                                                <SelectItem value="paid">
-                                                    Paid
-                                                </SelectItem>
-                                                <SelectItem value="processing">
-                                                    Processing
-                                                </SelectItem>
-                                                <SelectItem value="shipped">
-                                                    Shipped
-                                                </SelectItem>
-                                                <SelectItem value="completed">
-                                                    Completed
-                                                </SelectItem>
-                                                <SelectItem value="cancelled">
-                                                    Cancelled
-                                                </SelectItem>
-                                                <SelectItem value="payment_rejected">
-                                                    Payment Rejected
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <Button
-                                        type="submit"
-                                        disabled={statusProcessing}
-                                        variant="outline"
-                                        className="w-full"
-                                    >
-                                        Update Status
-                                    </Button>
-                                </form>
-
-                                {order.status === 'shipped' && (
-                                    <div className="rounded-lg border bg-green-50 p-4 dark:bg-green-950/30">
-                                        <div className="flex flex-col gap-2">
-                                            <span className="font-medium text-green-900 dark:text-green-100">
-                                                Order Delivered?
-                                            </span>
-                                            <p className="text-sm text-green-700 dark:text-green-300">
-                                                If the customer has received the
-                                                order, mark it as completed.
-                                            </p>
-                                            <Button
-                                                onClick={handleCompleteClick}
-                                                disabled={statusProcessing}
-                                                className="mt-2 w-full bg-green-600 text-white hover:bg-green-700"
-                                            >
-                                                <CheckCircle className="mr-2 h-4 w-4" />
-                                                Mark as Completed
-                                            </Button>
-                                        </div>
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
                     </div>
 
-                    <div className="space-y-6">
-                        {/* Payment Verification */}
-                        <Card>
-                            <CardHeader className="p-6">
-                                <CardTitle className="text-xl">
-                                    Payment Verification
+                    {/* Right Column - Customer Info & Actions */}
+                    <div className="flex flex-col gap-4 sm:gap-6">
+                        {/* Status Update Card */}
+                        <Card className="shadow-sm">
+                            <CardHeader className="bg-muted/30 px-5 py-4">
+                                <CardTitle className="text-base">
+                                    Update Order Status
                                 </CardTitle>
                             </CardHeader>
-                            <CardContent className="space-y-6 p-6 pt-0">
-                                {order.payment_proof ? (
-                                    <div className="space-y-6">
-                                        <div className="overflow-hidden rounded-xl border-2 bg-muted/30 shadow-sm">
-                                            <img
-                                                src={
-                                                    order.payment_proof.proof_image_url.startsWith(
-                                                        'images/',
-                                                    )
-                                                        ? `/${order.payment_proof.proof_image_url}`
-                                                        : `/storage/${order.payment_proof.proof_image_url}`
-                                                }
-                                                alt="Payment Proof"
-                                                className="max-h-96 w-full object-contain p-6"
-                                            />
-                                        </div>
-
-                                        <div className="grid gap-4 rounded-lg border p-4 text-sm">
-                                            <div className="grid grid-cols-2 gap-2">
-                                                <span className="text-muted-foreground">
-                                                    Sender Account
-                                                </span>
-                                                <span className="font-medium">
-                                                    {order.payment_proof
-                                                        .sender_account_number ||
-                                                        '-'}
-                                                </span>
-                                            </div>
-                                            <div className="grid grid-cols-2 gap-2">
-                                                <span className="text-muted-foreground">
-                                                    Uploaded At
-                                                </span>
-                                                <span className="font-medium">
-                                                    {new Date(
-                                                        order.payment_proof.uploaded_at,
-                                                    ).toLocaleString()}
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        {order.status ===
-                                            'waiting_confirmation' && (
-                                            <div className="flex gap-4 border-t pt-4">
-                                                <Button
-                                                    variant="default"
-                                                    className="flex-1 bg-green-600 hover:bg-green-700"
-                                                    onClick={() =>
-                                                        handleVerifyClick(
-                                                            'approve',
-                                                        )
-                                                    }
-                                                    disabled={verifyProcessing}
-                                                    size="lg"
-                                                >
-                                                    <CheckCircle className="mr-2 h-4 w-4" />
-                                                    Approve Payment
-                                                </Button>
-                                                <Button
-                                                    variant="destructive"
-                                                    className="flex-1"
-                                                    onClick={() =>
-                                                        handleVerifyClick(
-                                                            'reject',
-                                                        )
-                                                    }
-                                                    disabled={verifyProcessing}
-                                                    size="lg"
-                                                >
-                                                    <XCircle className="mr-2 h-4 w-4" />
-                                                    Reject Payment
-                                                </Button>
-                                            </div>
-                                        )}
-                                    </div>
-                                ) : (
-                                    <div className="py-12 text-center text-muted-foreground">
-                                        <div className="mb-4 flex justify-center">
-                                            <Clock className="h-12 w-12 opacity-20" />
-                                        </div>
-                                        <p>No payment proof uploaded yet.</p>
-                                    </div>
-                                )}
+                            <CardContent className="p-5">
+                                <div className="flex flex-col gap-3">
+                                    <select
+                                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:ring-1 focus:ring-ring focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                                        value={order.status}
+                                        onChange={(e) =>
+                                            handleUpdateStatus(e.target.value)
+                                        }
+                                    >
+                                        <option value="pending">
+                                            Pending
+                                        </option>
+                                        <option value="pending_payment">
+                                            Pending Payment
+                                        </option>
+                                        <option value="waiting_confirmation">
+                                            Waiting Confirmation
+                                        </option>
+                                        <option value="paid">
+                                            Paid
+                                        </option>
+                                        <option value="processing">
+                                            Processing
+                                        </option>
+                                        <option value="shipping">Shipping (Dikirim)</option>
+                                        <option value="completed">
+                                            Completed
+                                        </option>
+                                        <option value="cancelled">
+                                            Cancelled
+                                        </option>
+                                    </select>
+                                    <p className="text-xs text-muted-foreground">
+                                        Updating status will immediately reflect
+                                        on the customer's end.
+                                    </p>
+                                </div>
                             </CardContent>
                         </Card>
+
+                        {/* Customer Info */}
+                        <Card className="border-violet-100 shadow-sm transition-all hover:shadow-md">
+                            <CardHeader className="bg-violet-50/50 px-5 py-4">
+                                <div className="flex items-center gap-2">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-violet-100">
+                                        <User className="h-4 w-4 text-violet-600" />
+                                    </div>
+                                    <CardTitle className="text-base text-violet-900">
+                                        Customer Details
+                                    </CardTitle>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="p-5">
+                                <div className="space-y-5">
+                                    <div className="rounded-lg bg-muted/30 p-3 transition-colors hover:bg-muted/50">
+                                        <p className="mb-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                                            Account
+                                        </p>
+                                        <p className="font-medium text-foreground">
+                                            {order.customer?.name || 'Guest'}
+                                        </p>
+                                        <p className="text-sm font-medium text-brand-blue">
+                                            {order.customer?.email || 'N/A'}
+                                        </p>
+                                    </div>
+                                    <Separator className="bg-muted/60" />
+                                    <div className="px-1">
+                                        <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                                            <MapPin className="h-3.5 w-3.5" />{' '}
+                                            Shipping Contact
+                                        </p>
+                                        <p className="font-medium text-foreground">
+                                            {order.shipping_name}
+                                        </p>
+                                        <p className="text-sm text-muted-foreground">
+                                            {order.shipping_phone}
+                                        </p>
+                                    </div>
+                                    <div className="rounded-lg border border-dashed border-muted-foreground/20 bg-muted/10 p-3 px-1">
+                                        <p className="mb-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                                            Delivery Address
+                                        </p>
+                                        <p className="text-sm leading-relaxed text-foreground">
+                                            {order.shipping_address}
+                                            {order.shipping_city && (
+                                                <>
+                                                    <br />
+                                                    <span className="font-medium text-foreground/80">{order.shipping_city}</span>
+                                                </>
+                                            )}
+                                        </p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Order Notes */}
+                        {order.notes && (
+                            <Card className="border-amber-200 shadow-sm">
+                                <CardHeader className="bg-amber-50 px-5 py-4">
+                                    <CardTitle className="text-base text-amber-800">
+                                        Customer Notes
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="bg-amber-50/50 p-5">
+                                    <p className="border-l-2 border-amber-400 pl-3 text-sm leading-relaxed text-amber-900">
+                                        {order.notes}
+                                    </p>
+                                </CardContent>
+                            </Card>
+                        )}
                     </div>
                 </div>
             </div>
-
-            {/* Verify Payment Dialog */}
-            <Dialog
-                open={isVerifyDialogOpen}
-                onOpenChange={setIsVerifyDialogOpen}
-            >
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>
-                            {verifyAction === 'approve'
-                                ? 'Approve Payment'
-                                : 'Reject Payment'}
-                        </DialogTitle>
-                        <DialogDescription>
-                            {verifyAction === 'approve'
-                                ? 'Confirm that the payment proof is valid and approve this order.'
-                                : 'Please provide a reason for rejecting this payment proof.'}
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    {verifyAction === 'reject' && (
-                        <div className="grid gap-2">
-                            <Label htmlFor="reject-notes">
-                                Rejection Reason
-                            </Label>
-                            <Textarea
-                                id="reject-notes"
-                                placeholder="e.g., Payment amount doesn't match, unclear image, wrong account..."
-                                value={verifyData.notes}
-                                onChange={(e) =>
-                                    setVerifyData('notes', e.target.value)
-                                }
-                                rows={3}
-                            />
-                            <p className="text-xs text-muted-foreground">
-                                Customer will receive this message via email.
-                            </p>
-                        </div>
-                    )}
-
-                    <DialogFooter className="gap-2 sm:gap-0">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setIsVerifyDialogOpen(false)}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            type="button"
-                            variant={
-                                verifyAction === 'reject'
-                                    ? 'destructive'
-                                    : 'default'
-                            }
-                            onClick={confirmVerify}
-                            disabled={verifyProcessing}
-                            className={
-                                verifyAction === 'approve'
-                                    ? 'bg-green-600 hover:bg-green-700'
-                                    : ''
-                            }
-                        >
-                            {verifyProcessing
-                                ? 'Processing...'
-                                : verifyAction === 'approve'
-                                  ? 'Approve Payment'
-                                  : 'Reject Payment'}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            {/* Update Status Dialog */}
-            <Dialog
-                open={isStatusDialogOpen}
-                onOpenChange={setIsStatusDialogOpen}
-            >
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Update Order Status</DialogTitle>
-                        <DialogDescription>
-                            Are you sure you want to update the order status to{' '}
-                            <span className="font-medium">
-                                {statusData.status.replace('_', ' ')}
-                            </span>
-                            ?
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter>
-                        <DialogClose asChild>
-                            <Button variant="outline">Cancel</Button>
-                        </DialogClose>
-                        <Button
-                            onClick={confirmStatusUpdate}
-                            disabled={statusProcessing}
-                        >
-                            {statusProcessing ? 'Updating...' : 'Yes, Update'}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            {/* Complete Order Dialog */}
-            <Dialog
-                open={isCompleteDialogOpen}
-                onOpenChange={setIsCompleteDialogOpen}
-            >
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Complete Order</DialogTitle>
-                        <DialogDescription>
-                            Are you sure you want to mark this order as
-                            completed? This confirms that the customer has
-                            received their items.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter>
-                        <DialogClose asChild>
-                            <Button variant="outline">Cancel</Button>
-                        </DialogClose>
-                        <Button
-                            onClick={confirmComplete}
-                            disabled={statusProcessing}
-                            className="bg-green-600 hover:bg-green-700"
-                        >
-                            {statusProcessing
-                                ? 'Processing...'
-                                : 'Yes, Mark Completed'}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-        </AdminLayout>
+        </>
     );
 }
+
+AdminOrderShow.layout = (page: React.ReactNode) => (
+    <AdminLayout breadcrumbs={breadcrumbs}>{page}</AdminLayout>
+);

@@ -18,13 +18,17 @@ class RegistrationTest extends TestCase
 
     public function test_new_users_can_register()
     {
+        $this->withoutExceptionHandling();
+        $this->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class);
+
         $response = $this->post(route('register.store'), [
             'name' => 'Test User',
             'email' => 'test@example.com',
-            'password' => 'password',
-            'password_confirmation' => 'password',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
         ]);
 
+        $response->assertSessionHasNoErrors();
         $this->assertAuthenticated();
         $response->assertRedirect(route('dashboard', absolute: false));
     }

@@ -9,8 +9,8 @@ export default function UnderConstruction() {
 
             <div className="container mx-auto px-4">
                 <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
-                    <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800">
-                        <Construction className="h-12 w-12 text-zinc-600 dark:text-zinc-400" />
+                    <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-zinc-100">
+                        <Construction className="h-12 w-12 text-zinc-600" />
                     </div>
                     <h1 className="mb-3 text-3xl font-bold">
                         Under Construction

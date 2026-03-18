@@ -1,77 +1,65 @@
 import { useMemo } from 'react';
 
-export type PasswordStrength = 'weak' | 'medium' | 'strong';
+export type PasswordStrength = 'weak' | 'medium' | 'strong' | 'very_strong';
 
-interface PasswordStrengthResult {
+export interface PasswordRequirements {
+    length: boolean;
+    uppercase: boolean;
+    lowercase: boolean;
+    numberOrSymbol: boolean;
+}
+
+export interface PasswordStrengthResult {
     strength: PasswordStrength;
     score: number;
-    feedback: string[];
+    requirements: PasswordRequirements;
 }
 
 export function usePasswordStrength(password: string): PasswordStrengthResult {
     return useMemo(() => {
+        const requirements: PasswordRequirements = {
+            length: password.length >= 8,
+            uppercase: /[A-Z]/.test(password),
+            lowercase: /[a-z]/.test(password),
+            numberOrSymbol: /[^a-zA-Z]/.test(password), // Anything that is not a letter
+        };
+
         if (!password) {
             return {
                 strength: 'weak',
                 score: 0,
-                feedback: [],
+                requirements: {
+                    length: false,
+                    uppercase: false,
+                    lowercase: false,
+                    numberOrSymbol: false,
+                },
             };
         }
 
         let score = 0;
-        const feedback: string[] = [];
+        if (requirements.length) score += 1;
+        if (requirements.uppercase) score += 1;
+        if (requirements.lowercase) score += 1;
+        if (requirements.numberOrSymbol) score += 1;
 
-        // Length check
-        if (password.length >= 8) {
-            score += 1;
-        } else {
-            feedback.push('At least 8 characters');
-        }
-
-        if (password.length >= 12) {
-            score += 1;
-        }
-
-        // Lowercase check
-        if (/[a-z]/.test(password)) {
-            score += 1;
-        } else {
-            feedback.push('Add lowercase letters');
-        }
-
-        // Uppercase check
-        if (/[A-Z]/.test(password)) {
-            score += 1;
-        } else {
-            feedback.push('Add uppercase letters');
-        }
-
-        // Number check
-        if (/\d/.test(password)) {
-            score += 1;
-        } else {
-            feedback.push('Add numbers');
-        }
-
-        // Special character check
-        if (/[^a-zA-Z0-9]/.test(password)) {
-            score += 1;
-        } else {
-            feedback.push('Add special characters');
-        }
+        // Bonus for extra length if other requirements are partially met
+        if (password.length >= 12) score += 1;
 
         let strength: PasswordStrength = 'weak';
         if (score >= 4) {
+            strength = 'very_strong';
+        } else if (score === 3) {
             strength = 'strong';
-        } else if (score >= 2) {
+        } else if (score === 2) {
             strength = 'medium';
         }
 
         return {
             strength,
-            score,
-            feedback: feedback.slice(0, 2), // Show max 2 feedback items
+            // Cap visual score to 4
+            score: Math.min(score, 4),
+            requirements,
         };
     }, [password]);
 }
-

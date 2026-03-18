@@ -3,93 +3,72 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Book;
 use App\Models\Order;
+use App\Models\Payment;
+use App\Services\OrderService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class OrderController extends Controller
 {
+    public function __construct(private OrderService $orderService)
+    {
+    }
+
     public function index()
     {
-        $orders = Order::with(['customer', 'paymentProof', 'orderItems.book.images'])
+        $orders = Order::with(['customer:id,name,email', 'items'])
             ->latest()
-            ->paginate(10)
-            ->through(function ($order) {
-                return [
-                    'id' => $order->id,
-                    'customer' => $order->customer,
-                    'order_date' => $order->order_date,
-                    'total' => $order->total,
-                    'status' => $order->status,
-                    'order_items' => $order->orderItems->map(function ($item) {
-                        return [
-                            'id' => $item->id,
-                            'book' => [
-                                'title' => $item->book->title,
-                                'images' => $item->book->images->map(function ($img) {
-                                    return [
-                                        'url' => asset($img->image_url)
-                                    ];
-                                })
-                            ]
-                        ];
-                    }),
-                ];
-            });
+            ->paginate(15)
+            ->through(fn($order) => $this->orderService->formatOrder($order));
 
         return Inertia::render('admin/orders/index', [
-            'orders' => $orders
+            'orders' => $orders,
         ]);
     }
 
     public function show(Order $order)
     {
-        $order->load(['customer', 'orderItems.book.images', 'paymentProof']);
+        $order->load(['customer:id,name,email', 'items', 'payments.verifier:id,name', 'latestPayment']);
 
         return Inertia::render('admin/orders/show', [
             'order' => [
                 'id' => $order->id,
-                'order_date' => $order->order_date,
+                'order_number' => $order->order_number,
                 'status' => $order->status,
-                'total' => $order->total,
-                'customer_id' => $order->customer_id,
                 'shipping_name' => $order->shipping_name,
                 'shipping_phone' => $order->shipping_phone,
                 'shipping_address' => $order->shipping_address,
-                'shipping_method' => $order->shipping_method,
-                'tracking_number' => $order->tracking_number,
-                'unique_code' => $order->unique_code,
+                'shipping_city' => $order->shipping_city,
+                'subtotal' => $order->subtotal,
+                'shipping_cost' => $order->shipping_cost,
+                'total' => $order->total,
                 'payment_deadline' => $order->payment_deadline,
-                'customer' => [
-                    'id' => $order->customer->id,
-                    'name' => $order->customer->name,
-                    'email' => $order->customer->email,
-                ],
-                'order_items' => $order->orderItems->map(function ($item) {
-                    return [
-                        'id' => $item->id,
-                        'quantity' => $item->quantity,
-                        'price' => $item->price,
-                        'book' => [
-                            'id' => $item->book->id,
-                            'title' => $item->book->title,
-                            'images' => $item->book->images->map(fn($img) => [
-                                'id' => $img->id,
-                                'url' => asset($img->image_url)
-                            ])->values()->all()
-                        ]
-                    ];
-                })->values()->all(),
-                'payment_proof' => $order->paymentProof ? [
-                    'id' => $order->paymentProof->id,
-                    'proof_image_url' => $order->paymentProof->proof_image_url,
-                    'uploaded_at' => $order->paymentProof->uploaded_at,
-                    'sender_account_number' => $order->paymentProof->sender_account_number,
-                    'notes' => $order->paymentProof->notes,
-                    'verified_at' => $order->paymentProof->verified_at,
-                ] : null
-            ]
+                'notes' => $order->notes,
+                'customer' => $order->customer,
+                'items' => $order->items->map(fn($item) => [
+                    'id' => $item->id,
+                    'product_name' => $item->product_name,
+                    'variant_name' => $item->variant_name,
+                    'unit_price' => $item->unit_price,
+                    'quantity' => $item->quantity,
+                    'subtotal' => $item->subtotal,
+                    'image' => $item->product_snapshot['images'][0]['url'] ?? $item->product_snapshot['image'] ?? null,
+                    'product_snapshot' => $item->product_snapshot,
+                ])->values()->all(),
+                'latest_payment' => $order->latestPayment ? [
+                    'id' => $order->latestPayment->id,
+                    'type' => $order->latestPayment->type,
+                    'method' => $order->latestPayment->method,
+                    'proof_image_url' => $this->resolveImageUrl($order->latestPayment->proof_image_url),
+                    'sender_account' => $order->latestPayment->sender_account,
+                    'amount' => $order->latestPayment->amount,
+                    'status' => $order->latestPayment->status,
+                    'reject_reason' => $order->latestPayment->reject_reason,
+                    'verified_at' => $order->latestPayment->verified_at,
+                    'verifier' => $order->latestPayment->verifier?->name,
+                ] : null,
+            ],
         ]);
     }
 
@@ -97,32 +76,41 @@ class OrderController extends Controller
     {
         $request->validate([
             'action' => 'required|in:approve,reject',
-            'notes' => 'nullable|string',
+            'reject_reason' => 'required_if:action,reject|nullable|string',
         ]);
 
-        if ($request->action === 'approve') {
-            $order->update(['status' => 'processing']);
-            $order->paymentProof()->update([
-                'verified_at' => now(),
-                'verified_by' => auth()->id(),
-            ]);
+        $payment = $order->latestPayment;
 
-            // Update book status to sold
-            foreach ($order->orderItems as $item) {
-                $item->book->update(['status' => Book::STATUS_SOLD]);
+        if (!$payment) {
+            return back()->withErrors(['error' => 'No payment found for this order.']);
+        }
+
+        if ($request->action === 'approve') {
+            $payment->update([
+                'status' => 'verified',
+                'verified_by' => auth()->id(),
+                'verified_at' => now(),
+            ]);
+            $order->update(['status' => 'processing']);
+
+            // Deduct from actual stock now that payment is confirmed
+            foreach ($order->items as $item) {
+                if ($item->variant_id) {
+                    $item->variant?->decrement('stock', $item->quantity);
+                    $item->variant?->decrement('stock_reserved', $item->quantity);
+                } else {
+                    $item->product?->decrement('stock', $item->quantity);
+                    $item->product?->decrement('stock_reserved', $item->quantity);
+                }
             }
         } else {
-            $order->update(['status' => 'payment_rejected']);
-            $order->paymentProof()->update([
-                'notes' => $request->notes,
-                'verified_at' => now(),
+            $payment->update([
+                'status' => 'rejected',
+                'reject_reason' => $request->reject_reason,
                 'verified_by' => auth()->id(),
+                'verified_at' => now(),
             ]);
-
-            // Update book status back to available
-            foreach ($order->orderItems as $item) {
-                $item->book->updateStatusBasedOnOrders();
-            }
+            $order->update(['status' => 'pending']);
         }
 
         return back()->with('success', 'Payment verification updated.');
@@ -131,14 +119,12 @@ class OrderController extends Controller
     public function ship(Request $request, Order $order)
     {
         $request->validate([
-            'tracking_number' => 'required|string',
-            'shipping_method' => 'required|string',
+            'tracking_number' => 'required|string|max:100',
         ]);
 
         $order->update([
-            'status' => 'shipped',
+            'status' => 'shipping',
             'tracking_number' => $request->tracking_number,
-            'shipping_method' => $request->shipping_method,
         ]);
 
         return back()->with('success', 'Order marked as shipped.');
@@ -147,7 +133,7 @@ class OrderController extends Controller
     public function updateStatus(Request $request, Order $order)
     {
         $request->validate([
-            'status' => 'required|in:pending_payment,waiting_confirmation,paid,processing,shipped,completed,cancelled,payment_rejected',
+            'status' => 'required|in:pending,waiting_confirmation,pending_payment,paid,processing,shipping,completed,cancelled',
         ]);
 
         $order->update(['status' => $request->status]);

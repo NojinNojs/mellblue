@@ -2,42 +2,46 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class OrderItem extends Model
 {
-    use HasFactory;
-
     public $timestamps = false;
 
     protected $fillable = [
         'order_id',
-        'book_id',
+        'product_id',
+        'variant_id',
+        'product_name',
+        'variant_name',
+        'unit_price',
         'quantity',
-        'price',
+        'subtotal',
+        'product_snapshot',
     ];
 
     protected function casts(): array
     {
         return [
-            'price' => 'decimal:2',
+            'unit_price' => 'decimal:2',
+            'subtotal' => 'decimal:2',
+            'quantity' => 'integer',
+            'product_snapshot' => 'array',
         ];
     }
 
-    /**
-     * Get the order that owns the order item.
-     */
-    public function order()
+    public function order(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(Order::class, 'order_id');
+        return $this->belongsTo(Order::class);
     }
 
-    /**
-     * Get the book that is in the order item.
-     */
-    public function book()
+    public function product(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(Book::class, 'book_id');
+        return $this->belongsTo(Product::class);
+    }
+
+    public function variant(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(ProductVariant::class, 'variant_id');
     }
 }

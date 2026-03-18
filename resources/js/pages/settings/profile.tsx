@@ -4,9 +4,8 @@ import { type SharedData } from '@/types';
 import { Transition } from '@headlessui/react';
 import { Form, Head, Link, usePage } from '@inertiajs/react';
 
-import DeleteUser from '@/components/delete-user';
-import HeadingSmall from '@/components/heading-small';
-import InputError from '@/components/input-error';
+import HeadingSmall from '@/components/ui/heading-small';
+import InputError from '@/components/ui/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -61,110 +60,6 @@ export default function Profile({
                                     />
                                 </div>
 
-                                <div className="grid gap-2">
-                                    <Label htmlFor="full_name">Full Name</Label>
-                                    <Input
-                                        id="full_name"
-                                        className="mt-1 block w-full"
-                                        defaultValue={
-                                            auth.user.full_name as string
-                                        }
-                                        name="full_name"
-                                        placeholder="Full Name for Shipping"
-                                    />
-                                    <InputError
-                                        className="mt-2"
-                                        message={errors.full_name}
-                                    />
-                                </div>
-
-                                <div className="grid gap-2">
-                                    <Label htmlFor="phone">Phone Number</Label>
-                                    <Input
-                                        id="phone"
-                                        className="mt-1 block w-full"
-                                        defaultValue={auth.user.phone as string}
-                                        name="phone"
-                                        placeholder="08123456789"
-                                    />
-                                    <InputError
-                                        className="mt-2"
-                                        message={errors.phone}
-                                    />
-                                </div>
-
-                                <div className="grid gap-2">
-                                    <Label htmlFor="address">Address</Label>
-                                    <Input
-                                        id="address"
-                                        className="mt-1 block w-full"
-                                        defaultValue={
-                                            auth.user.address as string
-                                        }
-                                        name="address"
-                                        placeholder="Street Address"
-                                    />
-                                    <InputError
-                                        className="mt-2"
-                                        message={errors.address}
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="city">City</Label>
-                                        <Input
-                                            id="city"
-                                            className="mt-1 block w-full"
-                                            defaultValue={
-                                                auth.user.city as string
-                                            }
-                                            name="city"
-                                            placeholder="City"
-                                        />
-                                        <InputError
-                                            className="mt-2"
-                                            message={errors.city}
-                                        />
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="province">
-                                            Province
-                                        </Label>
-                                        <Input
-                                            id="province"
-                                            className="mt-1 block w-full"
-                                            defaultValue={
-                                                auth.user.province as string
-                                            }
-                                            name="province"
-                                            placeholder="Province"
-                                        />
-                                        <InputError
-                                            className="mt-2"
-                                            message={errors.province}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="grid gap-2">
-                                    <Label htmlFor="postal_code">
-                                        Postal Code
-                                    </Label>
-                                    <Input
-                                        id="postal_code"
-                                        className="mt-1 block w-full"
-                                        defaultValue={
-                                            auth.user.postal_code as string
-                                        }
-                                        name="postal_code"
-                                        placeholder="12345"
-                                    />
-                                    <InputError
-                                        className="mt-2"
-                                        message={errors.postal_code}
-                                    />
-                                </div>
 
                                 <div className="grid gap-2">
                                     <Label htmlFor="email">Email address</Label>
@@ -195,7 +90,7 @@ export default function Profile({
                                                 <Link
                                                     href={send()}
                                                     as="button"
-                                                    className="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
+                                                    className="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current!"
                                                 >
                                                     Click here to resend the
                                                     verification email.
@@ -237,8 +132,6 @@ export default function Profile({
                         )}
                     </Form>
                 </div>
-
-                <DeleteUser />
             </SettingsLayout>
         </UserLayout>
     );

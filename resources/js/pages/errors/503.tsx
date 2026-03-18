@@ -1,60 +1,63 @@
 import { Button } from '@/components/ui/button';
-import { Head, Link } from '@inertiajs/react';
-import { BookOpen, Clock, Home } from 'lucide-react';
+import { SharedData } from '@/types';
+import { Head, Link, usePage } from '@inertiajs/react';
+import { Clock, Home } from 'lucide-react';
 
 export default function ServiceUnavailable() {
+    const { appData } = usePage<SharedData>().props;
     return (
-        <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-yellow-50 via-amber-50 to-orange-50 p-4 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-            <Head title="503 - Layanan Tidak Tersedia" />
-            
+        <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-brand-ivory via-[#EAF0FF] to-brand-ivory p-4">
+            <Head title="503 - Service Unavailable" />
+
             <div className="text-center">
-                {/* Maintenance Book Illustration */}
                 <div className="mb-8 flex justify-center">
                     <div className="relative">
-                        <div className="h-48 w-48 rounded-lg bg-gradient-to-br from-yellow-400 to-amber-500 shadow-2xl dark:from-yellow-600 dark:to-amber-700">
+                        <div className="h-48 w-48 rounded-full bg-gradient-to-br from-brand-blue to-brand-blue-dark shadow-2xl">
                             <div className="absolute inset-0 flex items-center justify-center">
-                                <BookOpen className="h-24 w-24 text-white" />
+                                <img
+                                    src="/transparant-logo.svg"
+                                    alt="Logo"
+                                    className="h-24 w-24 object-contain"
+                                />
                             </div>
                         </div>
-                        {/* Clock icon */}
-                        <div className="absolute -right-4 top-0 animate-pulse">
-                            <Clock className="h-12 w-12 text-yellow-500 dark:text-yellow-400" />
+                        <div className="absolute top-0 -right-4 animate-pulse">
+                            <Clock className="h-12 w-12 text-brand-blue" />
                         </div>
                     </div>
                 </div>
 
-                {/* Error Message */}
-                <h1 className="mb-4 text-8xl font-bold text-yellow-600 dark:text-yellow-400">
-                    503
-                </h1>
-                <h2 className="mb-4 text-3xl font-semibold text-gray-800 dark:text-gray-200">
-                    Perpustakaan Sedang Ditutup untuk Perawatan! 🔧
+                <h1 className="mb-4 text-8xl font-bold text-brand-blue">503</h1>
+                <h2 className="mb-4 text-3xl font-semibold text-foreground">
+                    Back Soon — We're Crafting Something! 🔧
                 </h2>
-                <p className="mb-8 max-w-md text-lg text-gray-600 dark:text-gray-400">
-                    Maaf, perpustakaan kami sedang dalam perawatan untuk memberikan 
-                    pengalaman membaca yang lebih baik. Kami akan kembali segera!
+                <p className="mb-8 max-w-md text-lg text-muted-foreground">
+                    Our kitchen is closed for a bit while we prepare something
+                    even better for you. We'll be right back!
                 </p>
 
-                {/* Action Buttons */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
-                    <Button asChild size="lg" className="gap-2">
+                    <Button
+                        asChild
+                        size="lg"
+                        className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+                    >
                         <Link href="/">
                             <Home className="h-5 w-5" />
-                            Kembali ke Beranda
+                            Back to Home
                         </Link>
                     </Button>
                 </div>
 
-                {/* Fun Quote */}
-                <div className="mt-12 rounded-lg bg-white/50 p-6 shadow-lg dark:bg-gray-800/50">
-                    <p className="text-sm italic text-gray-700 dark:text-gray-300">
-                        "Perpustakaan terbaik adalah yang selalu diperbarui. 
-                        Kami sedang menyiapkan sesuatu yang istimewa untuk Anda!" 
-                        <span className="block mt-2 text-xs">- ToBuk Maintenance</span>
+                <div className="mt-12 rounded-2xl bg-white/60 p-6 shadow-lg">
+                    <p className="text-sm text-foreground/70 italic">
+                        "Great things take a little time. Hang tight!"
+                        <span className="mt-2 block text-xs text-primary">
+                            — {appData?.name || 'MELLBLUE'}
+                        </span>
                     </p>
                 </div>
             </div>
         </div>
     );
 }
-

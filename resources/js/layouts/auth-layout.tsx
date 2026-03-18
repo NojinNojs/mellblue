@@ -9,6 +9,7 @@ export default function AuthLayout({
     children: React.ReactNode;
     title: string;
     description: string;
+    bgImage?: string;
 }) {
     return (
         <AuthSplitLayoutTemplate title={title} description={description} {...props}>

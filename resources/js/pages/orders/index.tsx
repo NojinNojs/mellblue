@@ -1,18 +1,22 @@
-import { EmptyState } from '@/components/empty-state';
-import { OrderStatusBadge } from '@/components/order-status-badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
+import { OrderStatusBadge } from '@/components/ui/order-status-badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import UserLayout from '@/layouts/user-layout';
 import { formatCurrency, formatOrderDate } from '@/lib/format';
-import { type Order } from '@/types';
+import { type Order, type OrderItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { ArrowRight, BookOpen, Package, ShoppingBag } from 'lucide-react';
+import { ArrowRight, Package, PackageOpen, ShoppingBag } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 type StatusFilter = 'all' | 'pending' | 'processing' | 'shipped' | 'completed';
 
-export default function MyOrders({ orders }: { orders: Order[] }) {
+export interface MyOrdersPageProps {
+    orders: Order[];
+}
+
+export default function MyOrders({ orders }: MyOrdersPageProps) {
     const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
     const filteredOrders = useMemo(() => {
@@ -31,18 +35,22 @@ export default function MyOrders({ orders }: { orders: Order[] }) {
                 (o) => o.status === 'paid' || o.status === 'processing',
             );
         }
+        if (statusFilter === 'shipped') {
+            return orders.filter((o) => o.status === 'shipping');
+        }
 
         return orders.filter((o) => o.status === statusFilter);
     }, [orders, statusFilter]);
 
     const getOrderProgress = (status: Order['status']): number => {
         const progressMap: Record<Order['status'], number> = {
+            pending: 10,
             pending_payment: 20,
             waiting_confirmation: 30,
             paid: 40,
             payment_rejected: 0,
             processing: 60,
-            shipped: 80,
+            shipping: 80,
             completed: 100,
             cancelled: 0,
         };
@@ -124,9 +132,9 @@ export default function MyOrders({ orders }: { orders: Order[] }) {
                                     action={
                                         statusFilter === 'all' ? (
                                             <Button asChild>
-                                                <Link href="/books">
+                                                <Link href="/products">
                                                     <ShoppingBag className="mr-2 h-4 w-4" />
-                                                    Browse Books
+                                                    Browse Products
                                                 </Link>
                                             </Button>
                                         ) : undefined
@@ -138,12 +146,13 @@ export default function MyOrders({ orders }: { orders: Order[] }) {
                         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
                             {filteredOrders.map((order) => {
                                 const progress = getOrderProgress(order.status);
-                                const firstItem = order.order_items[0];
+                                const firstItem = order.items[0] as OrderItem;
+                                const firstImage = (firstItem as any)?.image;
 
                                 return (
                                     <Link
                                         key={order.id}
-                                        href={`/orders/${order.id}`}
+                                        href={`/orders/${order.order_number}`}
                                         className="group"
                                     >
                                         <Card className="h-full overflow-hidden transition-all hover:border-primary/50 hover:shadow-md">
@@ -152,11 +161,11 @@ export default function MyOrders({ orders }: { orders: Order[] }) {
                                                 <div className="flex items-start justify-between gap-4">
                                                     <div className="min-w-0 flex-1">
                                                         <p className="truncate text-base font-semibold">
-                                                            Order #{order.id}
+                                                            Order #{order.order_number}
                                                         </p>
                                                         <p className="text-sm text-muted-foreground">
                                                             {formatOrderDate(
-                                                                order.order_date,
+                                                                order.created_at,
                                                             )}
                                                         </p>
                                                     </div>
@@ -166,49 +175,41 @@ export default function MyOrders({ orders }: { orders: Order[] }) {
                                                     />
                                                 </div>
 
-                                                {/* Book Preview */}
+                                                {/* Product Preview */}
                                                 <div className="mt-5 flex items-start gap-4">
-                                                    {firstItem?.book
-                                                        ?.images?.[0]?.url ? (
-                                                        <div className="h-24 w-16 shrink-0 overflow-hidden rounded-md border bg-muted shadow-sm">
+                                                    {firstImage ? (
+                                                        <div className="h-16 w-16 shrink-0 overflow-hidden rounded-md border bg-muted shadow-sm">
                                                             <img
-                                                                src={
-                                                                    firstItem
-                                                                        .book
-                                                                        .images[0]
-                                                                        .url
-                                                                }
+                                                                src={firstImage}
                                                                 alt={
-                                                                    firstItem
-                                                                        .book
-                                                                        .title
+                                                                    firstItem?.product_name
                                                                 }
                                                                 className="h-full w-full object-cover"
                                                             />
                                                         </div>
                                                     ) : (
-                                                        <div className="flex h-24 w-16 shrink-0 items-center justify-center rounded-md border bg-muted">
-                                                            <BookOpen className="h-8 w-8 text-muted-foreground" />
+                                                        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-md border bg-muted">
+                                                            <PackageOpen className="h-6 w-6 text-muted-foreground" />
                                                         </div>
                                                     )}
                                                     <div className="min-w-0 flex-1 py-1">
                                                         <p className="line-clamp-2 text-base leading-snug font-medium">
-                                                            {firstItem?.book
-                                                                ?.title ||
-                                                                'Book'}
+                                                            {firstItem?.product_name ||
+                                                                'Product'}{' '}
+                                                            {firstItem?.variant_name
+                                                                ? `(${firstItem.variant_name})`
+                                                                : ''}
                                                         </p>
-                                                        {order.order_items
-                                                            .length > 1 && (
+                                                        {order.items.length >
+                                                            1 && (
                                                             <p className="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground">
                                                                 <Package className="h-4 w-4" />
                                                                 +
-                                                                {order
-                                                                    .order_items
+                                                                {order.items
                                                                     .length -
                                                                     1}{' '}
                                                                 more item
-                                                                {order
-                                                                    .order_items
+                                                                {order.items
                                                                     .length > 2
                                                                     ? 's'
                                                                     : ''}

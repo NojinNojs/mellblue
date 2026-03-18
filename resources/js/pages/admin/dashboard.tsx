@@ -9,16 +9,15 @@ import {
 } from '@/components/ui/card';
 import AdminLayout from '@/layouts/admin-layout';
 import * as admin from '@/routes/admin';
-import { type BreadcrumbItem } from '@/types';
-import { type Book } from '@/types/book';
+import { type BreadcrumbItem, type Product } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import {
     AlertCircle,
     ArrowRight,
-    BookOpen,
     CheckCircle2,
     DollarSign,
     Package,
+    PackageOpen,
     ShoppingCart,
     Sparkles,
     Users,
@@ -46,21 +45,33 @@ interface AdminDashboardProps {
     stats: {
         total_users: number;
         total_customers: number;
-        total_books: number;
-        available_books: number;
+        total_products: number;
+        available_products: number;
         total_orders: number;
         pending_orders: number;
         completed_orders: number;
         total_revenue: number;
     };
     recentOrders: Order[];
-    recentBooks: Book[];
+    recentProducts: Product[];
 }
+
+const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+    });
+};
+
+const formatPrice = (price: number) => {
+    return `Rp ${Math.round(price).toLocaleString('id-ID').replace(/,/g, '.')}`;
+};
 
 export default function AdminDashboard({
     stats,
     recentOrders,
-    recentBooks,
+    recentProducts,
 }: AdminDashboardProps) {
     const statCards = [
         {
@@ -68,16 +79,16 @@ export default function AdminDashboard({
             value: stats.total_users,
             icon: Users,
             description: `${stats.total_customers} customers`,
-            color: 'text-blue-600 dark:text-blue-400',
+            color: 'text-blue-600',
             bgColor: 'bg-blue-500/10',
             iconBg: 'bg-blue-500/20',
         },
         {
-            title: 'Total Books',
-            value: stats.total_books,
-            icon: BookOpen,
-            description: `${stats.available_books} available`,
-            color: 'text-emerald-600 dark:text-emerald-400',
+            title: 'Total Products',
+            value: stats.total_products,
+            icon: PackageOpen,
+            description: `${stats.available_products} active`,
+            color: 'text-emerald-600',
             bgColor: 'bg-emerald-500/10',
             iconBg: 'bg-emerald-500/20',
         },
@@ -86,35 +97,31 @@ export default function AdminDashboard({
             value: stats.total_orders,
             icon: ShoppingCart,
             description: `${stats.completed_orders} completed`,
-            color: 'text-violet-600 dark:text-violet-400',
+            color: 'text-violet-600',
             bgColor: 'bg-violet-500/10',
             iconBg: 'bg-violet-500/20',
         },
         {
             title: 'Revenue',
-            value: `Rp ${(stats.total_revenue || 0).toLocaleString('id-ID')}`,
+            value: formatPrice(stats.total_revenue || 0),
             icon: DollarSign,
             description: 'From completed orders',
-            color: 'text-amber-600 dark:text-amber-400',
+            color: 'text-amber-600',
             bgColor: 'bg-amber-500/10',
-            iconBg: 'bg-amber-500/20',
+            iconBg: 'bg-amber-500/20 shadow-inner',
         },
     ];
 
     const getStatusBadge = (status: string) => {
         const variants: Record<string, string> = {
-            pending:
-                'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800',
-            awaiting_payment:
-                'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300 border-orange-200 dark:border-orange-800',
-            processing:
-                'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 border-blue-200 dark:border-blue-800',
-            shipped:
-                'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800',
-            completed:
-                'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300 border-green-200 dark:border-green-800',
-            cancelled:
-                'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300 border-red-200 dark:border-red-800',
+            pending_payment: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+            waiting_confirmation: 'bg-orange-100 text-orange-800 border-orange-200',
+            paid: 'bg-blue-100 text-blue-800 border-blue-200',
+            processing: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+            shipped: 'bg-cyan-100 text-cyan-800 border-cyan-200',
+            completed: 'bg-green-100 text-green-800 border-green-200',
+            cancelled: 'bg-red-100 text-red-800 border-red-200',
+            payment_rejected: 'bg-red-200 text-red-900 border-red-300',
         };
         return (
             <Badge
@@ -126,37 +133,24 @@ export default function AdminDashboard({
         );
     };
 
-    const getBookStatusBadge = (status: string) => {
+    const getProductStatusBadge = (status: string) => {
         const variants: Record<string, string> = {
-            available:
-                'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300 border-green-200 dark:border-green-800',
-            booked: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800',
-            sold: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300 border-red-200 dark:border-red-800',
+            active: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+            draft: 'bg-amber-50 text-amber-700 border-amber-200',
+            archived: 'bg-slate-50 text-slate-700 border-slate-200',
         };
         return (
             <Badge
                 variant="outline"
-                className={`${variants[status] || 'bg-gray-100 text-gray-800'} text-xs capitalize`}
+                className={`${variants[status] || 'bg-slate-50 text-slate-700'} border-opacity-50 text-[10px] font-semibold tracking-wider uppercase px-2 py-0`}
             >
                 {status}
             </Badge>
         );
     };
 
-    const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString('id-ID', {
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric',
-        });
-    };
-
-    const formatPrice = (price: number) => {
-        return `Rp ${Math.round(price).toLocaleString('id-ID').replace(/,/g, '.')}`;
-    };
-
     return (
-        <AdminLayout breadcrumbs={breadcrumbs}>
+        <>
             <Head title="Admin Dashboard" />
             <div className="flex h-full flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-6">
                 {/* Stats Cards */}
@@ -197,23 +191,23 @@ export default function AdminDashboard({
 
                 {/* Pending Orders Alert */}
                 {stats.pending_orders > 0 ? (
-                    <Card className="border-orange-200 bg-gradient-to-r from-orange-50 to-amber-50 dark:border-orange-900 dark:from-orange-950/50 dark:to-amber-950/50">
+                    <Card className="border-orange-200 bg-gradient-to-r from-orange-50 to-amber-50">
                         <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                             <div className="flex items-start gap-3">
                                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-orange-500/20">
-                                    <AlertCircle className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                                    <AlertCircle className="h-5 w-5 text-orange-600" />
                                 </div>
                                 <div>
-                                    <p className="font-semibold text-orange-800 dark:text-orange-300">
+                                    <p className="font-semibold text-orange-800">
                                         {stats.pending_orders} Pending Order
                                         {stats.pending_orders > 1 ? 's' : ''}
                                     </p>
-                                    <p className="text-sm text-orange-600 dark:text-orange-400">
-                                        Review and process these orders
+                                    <p className="text-sm text-orange-600">
+                                        Review and verify these orders
                                     </p>
                                 </div>
                             </div>
-                            <Link href="/admin/orders?status=pending">
+                            <Link href="/admin/orders">
                                 <Button
                                     size="sm"
                                     className="w-full bg-orange-600 hover:bg-orange-700 sm:w-auto"
@@ -225,11 +219,11 @@ export default function AdminDashboard({
                         </CardContent>
                     </Card>
                 ) : (
-                    <Card className="border-green-200 bg-gradient-to-r from-green-50 to-emerald-50 dark:border-green-900 dark:from-green-950/50 dark:to-emerald-950/50">
+                    <Card className="border-green-200 bg-gradient-to-r from-green-50 to-emerald-50">
                         <CardContent className="flex items-center justify-center gap-2 p-4">
-                            <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
-                            <p className="font-medium text-green-800 dark:text-green-300">
-                                All orders are up to date!
+                            <CheckCircle2 className="h-5 w-5 text-green-600" />
+                            <p className="font-medium text-green-800">
+                                All orders are verified!
                             </p>
                         </CardContent>
                     </Card>
@@ -242,7 +236,7 @@ export default function AdminDashboard({
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 px-5 pt-5 pb-4">
                             <div className="flex items-center gap-2">
                                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/20">
-                                    <ShoppingCart className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+                                    <ShoppingCart className="h-4 w-4 text-violet-600" />
                                 </div>
                                 <div>
                                     <CardTitle className="text-base">
@@ -275,7 +269,7 @@ export default function AdminDashboard({
                                             <div className="min-w-0 flex-1">
                                                 <div className="flex flex-wrap items-center gap-2">
                                                     <p className="text-sm font-semibold">
-                                                        {order.order_number}
+                                                        #{order.order_number}
                                                     </p>
                                                     {getStatusBadge(
                                                         order.status,
@@ -311,23 +305,23 @@ export default function AdminDashboard({
                         </CardContent>
                     </Card>
 
-                    {/* Recent Books */}
+                    {/* Recent Products */}
                     <Card className="flex flex-col">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 px-5 pt-5 pb-4">
                             <div className="flex items-center gap-2">
                                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/20">
-                                    <BookOpen className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                                    <PackageOpen className="h-4 w-4 text-emerald-600" />
                                 </div>
                                 <div>
                                     <CardTitle className="text-base">
-                                        Recent Books
+                                        Recent Products
                                     </CardTitle>
                                     <CardDescription className="text-xs">
                                         Latest inventory additions
                                     </CardDescription>
                                 </div>
                             </div>
-                            <Link href="/admin/books">
+                            <Link href="/admin/products">
                                 <Button
                                     variant="ghost"
                                     size="sm"
@@ -339,38 +333,43 @@ export default function AdminDashboard({
                             </Link>
                         </CardHeader>
                         <CardContent className="flex-1 pb-4">
-                            {recentBooks && recentBooks.length > 0 ? (
+                            {recentProducts && recentProducts.length > 0 ? (
                                 <div className="space-y-3">
-                                    {recentBooks.map((book) => (
+                                    {recentProducts.map((product) => (
                                         <div
-                                            key={book.id}
-                                            className="flex items-center gap-3 rounded-lg border bg-card/50 p-3 transition-colors hover:bg-muted/50"
+                                            key={product.id}
+                                            className="group flex items-center gap-4 rounded-xl border border-transparent bg-muted/30 p-3 transition-all hover:border-emerald-200 hover:bg-emerald-50/30 hover:shadow-sm"
                                         >
-                                            <div className="h-12 w-9 shrink-0 overflow-hidden rounded-md bg-muted shadow-sm">
-                                                {book.images &&
-                                                book.images.length > 0 ? (
+                                            <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border bg-white shadow-sm ring-offset-background transition-transform duration-300 group-hover:scale-105">
+                                                {product.images &&
+                                                product.images.length > 0 ? (
                                                     <img
-                                                        src={book.images[0].url}
-                                                        alt={book.title}
+                                                        src={product.images[0].url}
+                                                        alt={product.name}
                                                         className="h-full w-full object-cover"
+                                                        onError={(e) => {
+                                                            const target = e.target as HTMLImageElement;
+                                                            target.style.display = 'none';
+                                                            const fallback = target.nextElementSibling as HTMLDivElement;
+                                                            if (fallback) fallback.style.display = 'flex';
+                                                        }}
                                                     />
-                                                ) : (
-                                                    <div className="flex h-full w-full items-center justify-center">
-                                                        <BookOpen className="h-4 w-4 text-muted-foreground" />
-                                                    </div>
-                                                )}
+                                                ) : null}
+                                                <div className={`absolute inset-0 flex items-center justify-center bg-muted/50 ${product.images?.length ? 'hidden' : 'flex'}`}>
+                                                    <PackageOpen className="h-5 w-5 text-muted-foreground/50" />
+                                                </div>
                                             </div>
                                             <div className="min-w-0 flex-1">
-                                                <p className="truncate text-sm font-semibold">
-                                                    {book.title}
+                                                <p className="truncate text-sm font-bold text-foreground">
+                                                    {product.name}
                                                 </p>
-                                                <div className="mt-0.5 flex flex-wrap items-center gap-2">
-                                                    {getBookStatusBadge(
-                                                        book.status,
+                                                <div className="mt-1 flex items-center gap-3">
+                                                    {getProductStatusBadge(
+                                                        product.status,
                                                     )}
-                                                    <span className="text-xs text-muted-foreground">
+                                                    <span className="text-xs font-semibold tabular-nums text-muted-foreground">
                                                         {formatPrice(
-                                                            book.price,
+                                                            product.base_price,
                                                         )}
                                                     </span>
                                                 </div>
@@ -381,10 +380,10 @@ export default function AdminDashboard({
                             ) : (
                                 <div className="flex h-full min-h-[200px] flex-col items-center justify-center py-6 text-center">
                                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                                        <BookOpen className="h-6 w-6 text-muted-foreground" />
+                                        <PackageOpen className="h-6 w-6 text-muted-foreground" />
                                     </div>
                                     <p className="mt-3 text-sm text-muted-foreground">
-                                        No books added yet
+                                        No products added yet
                                     </p>
                                 </div>
                             )}
@@ -406,20 +405,20 @@ export default function AdminDashboard({
                     </CardHeader>
                     <CardContent className="pb-4">
                         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
-                            <Link href="/admin/books" className="block">
+                            <Link href="/admin/products" className="block">
                                 <Button
                                     variant="outline"
                                     className="h-auto w-full justify-start gap-3 p-3 sm:p-4"
                                 >
                                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500/20">
-                                        <BookOpen className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                                        <PackageOpen className="h-4 w-4 text-emerald-600" />
                                     </div>
                                     <div className="text-left">
                                         <p className="font-medium">
-                                            Manage Books
+                                            Manage Products
                                         </p>
                                         <p className="text-xs text-muted-foreground">
-                                            Add, edit, or remove books
+                                            Add, edit, or remove products
                                         </p>
                                     </div>
                                 </Button>
@@ -430,7 +429,7 @@ export default function AdminDashboard({
                                     className="h-auto w-full justify-start gap-3 p-3 sm:p-4"
                                 >
                                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-violet-500/20">
-                                        <ShoppingCart className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+                                        <ShoppingCart className="h-4 w-4 text-violet-600" />
                                     </div>
                                     <div className="text-left">
                                         <p className="font-medium">
@@ -448,7 +447,7 @@ export default function AdminDashboard({
                                     className="h-auto w-full justify-start gap-3 p-3 sm:p-4"
                                 >
                                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-500/20">
-                                        <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                        <Users className="h-4 w-4 text-blue-600" />
                                     </div>
                                     <div className="text-left">
                                         <p className="font-medium">
@@ -464,6 +463,10 @@ export default function AdminDashboard({
                     </CardContent>
                 </Card>
             </div>
-        </AdminLayout>
+        </>
     );
 }
+
+AdminDashboard.layout = (page: React.ReactNode) => (
+    <AdminLayout breadcrumbs={breadcrumbs}>{page}</AdminLayout>
+);

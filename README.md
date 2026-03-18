@@ -1,87 +1,115 @@
-# ToBuk (Toko Buku)
+# MELLBLUE — Premium Artisan Treats
 
 ![Laravel](https://img.shields.io/badge/Laravel-v12-FF2D20?style=for-the-badge&logo=laravel)
-![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![React](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![Inertia.js](https://img.shields.io/badge/Inertia.js-9553E9?style=for-the-badge&logo=inertia)
 ![Shadcn UI](https://img.shields.io/badge/shadcn%2Fui-000000?style=for-the-badge&logo=shadcnui&logoColor=white)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS_v4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 
-**ToBuk** is a modern, full-stack bookstore application designed to provide a seamless browsing and purchasing experience. Built with the latest technologies, it features a robust admin panel for inventory management and a sleek, responsive public interface.
+**MELLBLUE** is a modern, full-stack e-commerce platform for premium artisan food products. Built with the latest technologies, it features a complete order lifecycle — from browsing and checkout, to payment verification, shipping, and downloadable PDF receipts.
+
+---
+
+## ✨ Features
+
+### 🛒 Customer Experience
+- **Product Catalog** — Browse products with image galleries, variants, and pricing
+- **Shopping & Checkout** — Streamlined checkout flow with shipping details
+- **Payment Upload** — Upload payment proof with image preview
+- **Order Tracking** — Real-time order timeline with status progression
+- **Downloadable Receipt** — PDF invoice generation with professional branding (DomPDF)
+- **Order Completion** — Confirm receipt when package arrives
+
+### 🔧 Admin Panel
+- **Dashboard** — Overview with stats, recent orders, and products
+- **Order Management** — Verify payments, update shipping status, add tracking numbers
+- **Product Management** — CRUD products with image uploads, variants, and categories
+- **User Management** — View and manage customer accounts
+
+### 🎨 Design & UX
+- **Responsive Design** — Mobile-first, works on all devices
+- **Modern UI** — Built with shadcn/ui components and Tailwind CSS v4
+- **Animations** — Smooth transitions with Framer Motion
+- **Dark/Light Mode** — Theme support via next-themes
+
+---
 
 ## 🚀 Tech Stack
 
-- **Framework:** [Laravel v12](https://laravel.com)
-- **Frontend:** [React](https://react.dev)
-- **Glue:** [Inertia.js](https://inertiajs.com)
-- **UI Components:** [Shadcn UI](https://ui.shadcn.com)
-- **Styling:** [Tailwind CSS](https://tailwindcss.com)
+| Layer | Technology |
+|---|---|
+| **Backend** | [Laravel 12](https://laravel.com) (PHP 8.2+) |
+| **Frontend** | [React 19](https://react.dev) + [TypeScript](https://typescriptlang.org) |
+| **Bridge** | [Inertia.js](https://inertiajs.com) |
+| **UI Components** | [shadcn/ui](https://ui.shadcn.com) |
+| **Styling** | [Tailwind CSS v4](https://tailwindcss.com) |
+| **Database** | MySQL |
+| **PDF Generation** | [DomPDF](https://github.com/barryvdh/laravel-dompdf) |
+| **Build Tool** | [Vite 7](https://vitejs.dev) |
+
+---
 
 ## 📋 Requirements
 
-Ensure you have the following installed on your machine:
-
-- PHP 8.2 or higher
+- PHP 8.2+
 - Composer
-- Node.js & npm
-- MySQL Database
+- Node.js 18+ & npm
+- MySQL 8.0+
+
+---
 
 ## 🛠️ Installation
 
-Follow these steps to set up the project locally:
-
-1.  **Clone the repository**
-
-    ```bash
-    git clone https://github.com/NojinNojs/tobuk-app.git
-    cd tobuk-app
-    ```
-
-2.  **Install PHP dependencies**
-
-    ```bash
-    composer install
-    ```
-
-3.  **Install Node.js dependencies**
-
-    ```bash
-    npm install
-    ```
-
-4.  **Environment Setup**
-    Copy the example environment file and configure your database settings.
-
-    ```bash
-    cp .env.example .env
-    ```
-
-    Open `.env` and update the `DB_` variables (DB_DATABASE, DB_USERNAME, DB_PASSWORD) to match your local MySQL configuration.
-
-5.  **Generate Application Key**
-
-    ```bash
-    php artisan key:generate
-    ```
-
-6.  **Run Migrations**
-    Create the database tables.
-    ```bash
-    php artisan migrate
-    ```
-
-## 🌱 Database Seeding
-
-To populate the database with initial data, including a list of books, use the following command:
+### 1. Clone the repository
 
 ```bash
-php artisan db:seed --class=BookSeeder
+git clone https://github.com/NojinNojs/mellblue.git
+cd mellblue
 ```
 
-> **Note:** This will seed the `books` table with sample data for testing and development.
+### 2. Install dependencies
+
+```bash
+composer install
+npm install
+```
+
+### 3. Environment setup
+
+```bash
+cp .env.example .env
+```
+
+Open `.env` and configure:
+- `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` — your MySQL credentials
+- `APP_NAME` — your store name (default: `MELLBLUE`)
+- `APP_PHONE` — contact phone number
+- `APP_INSTAGRAM`, `APP_TIKTOK` — social media links
+
+### 4. Generate application key
+
+```bash
+php artisan key:generate
+```
+
+### 5. Run migrations
+
+```bash
+php artisan migrate
+```
+
+### 6. Create storage symlink
+
+```bash
+php artisan storage:link
+```
+
+---
 
 ## 💻 Development
 
-To start the development server, use the helper script which runs the Laravel server, queue listener, and Vite development server concurrently:
+Start all development servers concurrently (Laravel, Queue, Vite):
 
 ```bash
 composer run dev
@@ -89,56 +117,58 @@ composer run dev
 
 Access the application at `http://localhost:8000`.
 
+---
+
 ## 📦 Production
 
-For a production environment, follow these optimization steps:
+```bash
+npm run build
+php artisan optimize
+php artisan migrate --force
+```
 
-1.  **Build Frontend Assets**
-
-    ```bash
-    npm run build
-    ```
-
-2.  **Optimize Configuration**
-
-    ```bash
-    php artisan optimize
-    ```
-
-3.  **Run Migrations (Force)**
-
-    ```bash
-    php artisan migrate --force
-    ```
-
-4.  **Serve the Application**
-    Point your web server (Nginx or Apache) to the `public/` directory of the project.
-
-## 🐘 Laragon (Windows)
-
-If you are using [Laragon](https://laragon.org/) for development or production on Windows:
-
-1.  **Clone into Root**
-    Clone the repository into your Laragon root directory (usually `C:\laragon\www`).
-
-    ```bash
-    cd C:\laragon\www
-    git clone https://github.com/NojinNojs/tobuk-app.git
-    ```
-
-2.  **Auto-Virtual Hosts**
-    Reload Laragon (**Menu > Apache/Nginx > Reload**). Laragon will automatically create a hostname for you, likely `http://tobuk-app.test`.
-
-3.  **PHP Version**
-    Ensure you have selected **PHP 8.2** or higher in Laragon (**Menu > PHP > Version**).
-
-4.  **Database Setup**
-    Laragon includes HeidiSQL. Open it, create a new database named `tobuk_db` (or whatever you set in `.env`), and then run the migrations:
-    ```bash
-    php artisan migrate
-    php artisan db:seed --class=BookSeeder
-    ```
+Point your web server (Nginx or Apache) to the `public/` directory.
 
 ---
 
-_Enjoy building with ToBuk!_
+## 🐘 Laragon (Windows)
+
+1. Clone into Laragon's `www` directory
+2. Reload Laragon — it will auto-create a virtual host (e.g., `http://mellblue.test`)
+3. Ensure PHP 8.2+ is selected (**Menu > PHP > Version**)
+4. Create the database via HeidiSQL, then run migrations
+
+---
+
+## 📁 Project Structure
+
+```
+├── app/
+│   ├── Http/Controllers/        # Route controllers (Admin + Customer)
+│   ├── Models/                  # Eloquent models
+│   └── Services/                # Business logic (OrderService, ProductService)
+├── database/
+│   ├── migrations/              # Database schema
+│   └── seeders/                 # Sample data
+├── resources/
+│   ├── js/
+│   │   ├── components/          # Reusable UI components
+│   │   ├── layouts/             # App & Admin layouts
+│   │   ├── pages/               # Inertia page components
+│   │   └── types/               # TypeScript type definitions
+│   └── views/
+│       └── receipts/            # Blade templates for PDF receipts
+├── routes/
+│   └── web.php                  # All route definitions
+└── public/                      # Public assets
+```
+
+---
+
+## 🧑‍💻 Author
+
+**Muhammad Raffi Aqsan** ([@NojinNojs](https://github.com/NojinNojs))
+
+---
+
+_Built with ❤️ using Laravel, React, and modern web technologies._
