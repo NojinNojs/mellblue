@@ -24,7 +24,7 @@ export default function Login({ status, canRegister }: LoginProps) {
         <AuthLayout
             title="Welcome Back"
             description="Enter your email and password to access your account"
-            bgImage="/hero-brownie.png"
+            bgImage="/fudgy-brownies.webp"
         >
             <Head title="Log in" />
 

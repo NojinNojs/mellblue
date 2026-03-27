@@ -37,7 +37,7 @@ export default function Register() {
         <AuthLayout
             title="Create an account"
             description="Enter your details below to create your account"
-            bgImage="/ocean-milk-2.jpeg"
+            bgImage="/ocean-milk-2.webp"
         >
             <Head title="Register" />
             <form onSubmit={submit} className="space-y-6">

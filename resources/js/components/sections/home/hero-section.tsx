@@ -187,7 +187,7 @@ export function HeroSection() {
 
                         <div className="relative aspect-[4/5] w-full max-w-sm overflow-hidden rounded-3xl border border-white/20 shadow-2xl shadow-foreground/10 lg:max-w-md">
                             <img
-                                src="/ocean-milk.png"
+                                src="/ocean-milk.webp"
                                 alt="MELLBLUE signature Ocean Milk — perfectly fresh"
                                 className="h-full w-full object-cover"
                             />
