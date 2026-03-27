@@ -88,26 +88,47 @@ export function HeroSection() {
                             Refresh your{' '}
                             <span className="relative inline-block">
                                 day
-                                {/* Decorative underline */}
-                                <motion.svg
-                                    viewBox="0 0 200 12"
-                                    className="absolute -bottom-1 left-0 w-full"
-                                    initial={{ pathLength: 0, opacity: 0 }}
-                                    animate={{ pathLength: 1, opacity: 1 }}
-                                    transition={{
-                                        duration: 0.8,
-                                        delay: 1.2,
-                                        ease: 'easeOut',
-                                    }}
-                                >
-                                    <path
-                                        d="M 2 8 Q 50 2, 100 8 Q 150 14, 198 6"
-                                        className="stroke-brand-blue-dark"
-                                        strokeWidth="3"
+                                {/* Decorative animated underline — layered strokes */}
+                                <svg
+                                    viewBox="0 0 220 18"
+                                    className="absolute -bottom-2 left-0 w-full overflow-visible"
+                                    aria-hidden="true"
+                                >                                    {/* Shadow / glow stroke */}
+                                    <motion.path
+                                        d="M 4 13 Q 55 3, 110 10 Q 165 17, 216 7"
+                                        stroke="var(--color-brand-blue)"
+                                        strokeWidth="7"
                                         fill="none"
                                         strokeLinecap="round"
+                                        opacity={0.18}
+                                        initial={{ pathLength: 0 }}
+                                        animate={{ pathLength: 1 }}
+                                        transition={{ duration: 0.9, delay: 1.0, ease: 'easeOut' }}
                                     />
-                                </motion.svg>
+                                    {/* Main blue wave */}
+                                    <motion.path
+                                        d="M 4 13 Q 55 3, 110 10 Q 165 17, 216 7"
+                                        stroke="var(--color-brand-blue-dark)"
+                                        strokeWidth="3.5"
+                                        fill="none"
+                                        strokeLinecap="round"
+                                        initial={{ pathLength: 0, opacity: 0 }}
+                                        animate={{ pathLength: 1, opacity: 1 }}
+                                        transition={{ duration: 0.85, delay: 1.15, ease: 'easeOut' }}
+                                    />
+                                    {/* Shimmer highlight */}
+                                    <motion.path
+                                        d="M 4 13 Q 55 3, 110 10 Q 165 17, 216 7"
+                                        stroke="white"
+                                        strokeWidth="1.2"
+                                        fill="none"
+                                        strokeLinecap="round"
+                                        opacity={0.5}
+                                        initial={{ pathLength: 0, opacity: 0 }}
+                                        animate={{ pathLength: 1, opacity: 0.5 }}
+                                        transition={{ duration: 0.7, delay: 1.4, ease: 'easeOut' }}
+                                    />
+                                </svg>
                             </span>
                             <br />
                             with Ocean Milk.
@@ -140,8 +161,8 @@ export function HeroSection() {
                                 variant="primary"
                             />
                             <CTAButton
-                                label="Our Story"
-                                href="/products"
+                                label="Contact Us"
+                                href="/contact"
                                 variant="outline"
                                 showArrow={false}
                             />

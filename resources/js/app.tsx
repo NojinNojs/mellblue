@@ -14,6 +14,7 @@ createInertiaApp({
             `./pages/${name}.tsx`,
             import.meta.glob('./pages/**/*.tsx'),
         ),
+    // Render error.tsx for HTTP error responses (404, 500, etc.)
     setup({ el, App, props }) {
         const root = createRoot(el);
 

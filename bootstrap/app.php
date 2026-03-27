@@ -23,55 +23,22 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e, \Illuminate\Http\Request $request) {
+        $renderError = function (int $status, \Illuminate\Http\Request $request) {
             if ($request->expectsJson() || $request->is('api/*')) {
-                return response()->json(['message' => 'Not Found'], 404);
+                return response()->json(['message' => \Symfony\Component\HttpFoundation\Response::$statusTexts[$status] ?? 'Error'], $status);
             }
-            
-            if ($request->inertia()) {
-                return \Inertia\Inertia::render('errors/404')->toResponse($request)->setStatusCode(404);
-            }
+            return \Inertia\Inertia::render('error', ['status' => $status])
+                ->toResponse($request)
+                ->setStatusCode($status);
+        };
+
+        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\HttpException $e, \Illuminate\Http\Request $request) use ($renderError) {
+            return $renderError($e->getStatusCode(), $request);
         });
 
-        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException $e, \Illuminate\Http\Request $request) {
-            if ($request->expectsJson() || $request->is('api/*')) {
-                return response()->json(['message' => 'Forbidden'], 403);
-            }
-            
-            if ($request->inertia()) {
-                return \Inertia\Inertia::render('errors/403')->toResponse($request)->setStatusCode(403);
-            }
-        });
-
-        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\HttpException $e, \Illuminate\Http\Request $request) {
-            if ($request->expectsJson() || $request->is('api/*')) {
-                return response()->json(['message' => $e->getMessage()], $e->getStatusCode());
-            }
-            
-            if ($request->inertia()) {
-                $statusCode = $e->getStatusCode();
-                
-                if ($statusCode === 403) {
-                    return \Inertia\Inertia::render('errors/403')->toResponse($request)->setStatusCode(403);
-                }
-                
-                if ($statusCode === 404) {
-                    return \Inertia\Inertia::render('errors/404')->toResponse($request)->setStatusCode(404);
-                }
-                
-                if ($statusCode === 503) {
-                    return \Inertia\Inertia::render('errors/503')->toResponse($request)->setStatusCode(503);
-                }
-            }
-        });
-
-        $exceptions->render(function (\Throwable $e, \Illuminate\Http\Request $request) {
-            if ($request->expectsJson() || $request->is('api/*')) {
-                return response()->json(['message' => 'Server Error'], 500);
-            }
-            
-            if ($request->inertia() && !config('app.debug')) {
-                return \Inertia\Inertia::render('errors/500')->toResponse($request)->setStatusCode(500);
+        $exceptions->render(function (\Throwable $e, \Illuminate\Http\Request $request) use ($renderError) {
+            if (!config('app.debug')) {
+                return $renderError(500, $request);
             }
         });
     })->create();

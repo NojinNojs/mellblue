@@ -42,9 +42,9 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'appData' => [
                 'name' => config('app.name'),
-                'phone' => env('APP_PHONE'),
-                'instagram' => env('APP_INSTAGRAM'),
-                'tiktok' => env('APP_TIKTOK'),
+                'phone' => config('app.phone'),
+                'instagram' => config('app.instagram'),
+                'tiktok' => config('app.tiktok'),
             ],
             'name' => config('app.name'),
             'quote' => ['message' => trim($message), 'author' => trim($author)],

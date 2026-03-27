@@ -10,6 +10,10 @@ Route::get('/', [\App\Http\Controllers\ProductController::class, 'home'])->name(
 Route::get('/products', [\App\Http\Controllers\ProductController::class, 'index'])->name('products.index');
 Route::get('/products/{id}', [\App\Http\Controllers\ProductController::class, 'show'])->name('products.show');
 
+Route::get('/contact', function () {
+    return Inertia::render('contact');
+})->name('contact');
+
 // ─── Authenticated User Routes ────────────────────────────────────────────────
 
 Route::middleware(['auth', 'verified'])->group(function () {
