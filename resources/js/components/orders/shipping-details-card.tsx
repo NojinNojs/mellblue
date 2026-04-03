@@ -36,12 +36,12 @@ export function ShippingDetailsCard({
                 <CardTitle className="flex items-center justify-between text-xl">
                     <div className="flex items-center gap-2">
                         <Truck className="h-5 w-5 text-muted-foreground" />
-                        Shipping Details
+                        Detail Pengiriman
                     </div>
                     {status === 'completed' && (
                         <Badge className="bg-green-600 hover:bg-green-700">
                             <CheckCircle className="mr-1 h-3 w-3" />
-                            Delivered
+                            Pesanan Sampai
                         </Badge>
                     )}
                 </CardTitle>
@@ -50,7 +50,7 @@ export function ShippingDetailsCard({
                 <div className="grid gap-6 sm:grid-cols-2">
                     <div className="space-y-1">
                         <Label className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                            Recipient Name
+                            Nama Penerima
                         </Label>
                         <p className="text-base font-semibold">
                             {shippingName}
@@ -58,7 +58,7 @@ export function ShippingDetailsCard({
                     </div>
                     <div className="space-y-1">
                         <Label className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                            Phone Number
+                            Nomor HP
                         </Label>
                         <p className="text-base font-medium">{shippingPhone}</p>
                     </div>
@@ -68,7 +68,7 @@ export function ShippingDetailsCard({
 
                 <div className="space-y-1">
                     <Label className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                        Delivery Address
+                        Alamat Pengiriman
                     </Label>
                     <p className="text-base leading-relaxed font-medium">
                         {shippingAddress}
@@ -84,14 +84,14 @@ export function ShippingDetailsCard({
                                     <Truck className="h-4 w-4 text-white" />
                                 </div>
                                 <Label className="text-sm font-semibold text-blue-900">
-                                    Tracking Information
+                                    Lacak Pengiriman
                                 </Label>
                             </div>
                             <div className="space-y-3">
                                 {shippingMethod && (
                                     <div>
                                         <p className="text-xs font-medium text-blue-700">
-                                            Courier Service
+                                            Jasa Ekspedisi
                                         </p>
                                         <p className="text-sm font-bold text-blue-900">
                                             {shippingMethod}
@@ -100,7 +100,7 @@ export function ShippingDetailsCard({
                                 )}
                                 <div>
                                     <p className="text-xs font-medium text-blue-700">
-                                        Tracking Number
+                                        Nomor Resi
                                     </p>
                                     <div className="flex items-center gap-2">
                                         <p className="font-mono text-lg font-bold tracking-wider text-blue-900">
@@ -115,7 +115,7 @@ export function ShippingDetailsCard({
                                             }
                                         >
                                             <Copy className="mr-1.5 h-3.5 w-3.5" />
-                                            Copy
+                                            Salin
                                         </Button>
                                     </div>
                                 </div>

@@ -22,11 +22,11 @@ export default function Login({ status, canRegister }: LoginProps) {
 
     return (
         <AuthLayout
-            title="Welcome Back"
-            description="Enter your email and password to access your account"
+            title="Selamat Datang Kembali"
+            description="Masukkan email dan kata sandi untuk masuk ke akun Anda"
             bgImage="/fudgy-brownies.webp"
         >
-            <Head title="Log in" />
+            <Head title="Masuk" />
 
             {status && (
                 <div className="mb-4 rounded-md bg-green-50 p-3 text-center text-sm font-medium text-green-600">
@@ -51,7 +51,7 @@ export default function Login({ status, canRegister }: LoginProps) {
                                     required
                                     autoFocus
                                     autoComplete="email"
-                                    placeholder="Enter your email"
+                                    placeholder="Masukkan email Anda"
                                     className="h-11"
                                 />
                                 <InputError message={errors.email} />
@@ -59,7 +59,7 @@ export default function Login({ status, canRegister }: LoginProps) {
 
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between">
-                                    <Label htmlFor="password">Password</Label>
+                                    <Label htmlFor="password">Kata Sandi</Label>
                                 </div>
                                 <div className="relative">
                                     <Input
@@ -70,7 +70,7 @@ export default function Login({ status, canRegister }: LoginProps) {
                                         name="password"
                                         required
                                         autoComplete="current-password"
-                                        placeholder="Enter your password"
+                                        placeholder="Masukkan kata sandi Anda"
                                         className="h-11 pr-10"
                                     />
                                     <button
@@ -97,7 +97,7 @@ export default function Login({ status, canRegister }: LoginProps) {
                                         htmlFor="remember"
                                         className="cursor-pointer text-sm font-normal"
                                     >
-                                        Remember me
+                                        Ingat saya
                                     </Label>
                                 </div>
                             </div>
@@ -109,18 +109,18 @@ export default function Login({ status, canRegister }: LoginProps) {
                                 data-test="login-button"
                             >
                                 {processing && <Spinner />}
-                                Sign In
+                                Masuk
                             </Button>
                         </div>
 
                         {canRegister && (
                             <div className="text-center text-sm text-muted-foreground">
-                                Don't have an account?{' '}
+                                Belum punya akun?{' '}
                                 <TextLink
                                     href={register()}
                                     className="font-medium text-foreground hover:underline"
                                 >
-                                    Sign Up
+                                    Daftar
                                 </TextLink>
                             </div>
                         )}

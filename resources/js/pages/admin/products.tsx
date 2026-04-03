@@ -23,6 +23,7 @@ import { ColumnDef } from '@tanstack/react-table';
 import {
     AlertTriangle,
     Archive,
+    ArchiveRestore,
     CheckCircle2,
     ChevronLeft,
     ChevronRight,
@@ -214,6 +215,7 @@ export default function Products({ products, categories }: ProductsPageProps) {
     const [statusFilter, setStatusFilter] = useState('all');
 
     const [isDeleting, setIsDeleting] = useState(false);
+    const [isRestoring, setIsRestoring] = useState(false);
     const [togglingId, setTogglingId] = useState<number | null>(null);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -250,22 +252,46 @@ export default function Products({ products, categories }: ProductsPageProps) {
         if (!selectedProduct) return;
         setIsDeleting(true);
         router.delete(`/admin/products/${selectedProduct.id}`, {
-            onSuccess: () => {
-                toast.success('Product archived successfully');
-                setDeleteDialogOpen(false);
-                setSelectedProduct(null);
+            onSuccess: (page) => {
+                const flash = page.props.flash as Record<string, string | null> | undefined;
+                if (flash?.error) {
+                    toast.error(flash.error, { duration: 5000 });
+                } else {
+                    toast.success(flash?.success || 'Product archived successfully');
+                    setDeleteDialogOpen(false);
+                    setSelectedProduct(null);
+                }
                 setIsDeleting(false);
             },
             onError: () => {
-                toast.error('Failed to delete product');
+                toast.error('Failed to process request');
                 setIsDeleting(false);
+            },
+        });
+    };
+
+    const handleRestoreProduct = (product: Product) => {
+        setIsRestoring(true);
+        router.post(`/admin/products/${product.id}/restore`, {}, {
+            onSuccess: (page) => {
+                const flash = page.props.flash as Record<string, string | null> | undefined;
+                if (flash?.error) {
+                    toast.error(flash.error, { duration: 5000 });
+                } else {
+                    toast.success(flash?.success || 'Product restored successfully');
+                }
+                setIsRestoring(false);
+            },
+            onError: () => {
+                toast.error('Failed to restore product');
+                setIsRestoring(false);
             },
         });
     };
 
     const handleToggleStatus = (product: Product, currentStatus: string) => {
         if (togglingId !== null) return; // prevent double-tap
-        const newStatus = currentStatus === 'active' ? 'draft' : 'active';
+        const newStatus = currentStatus === 'active' ? 'sold_out' : 'active';
         setTogglingId(product.id);
         router.patch(
             `/admin/products/${product.id}/toggle-status`,
@@ -315,7 +341,7 @@ export default function Products({ products, categories }: ProductsPageProps) {
             options: [
                 { label: 'All Status', value: 'all' },
                 { label: 'Active', value: 'active' },
-                { label: 'Draft', value: 'draft' },
+                { label: 'Sold Out', value: 'sold_out' },
                 { label: 'Archived', value: 'archived' },
             ],
         },
@@ -417,21 +443,22 @@ export default function Products({ products, categories }: ProductsPageProps) {
                 header: () => <div className="text-center">Status</div>,
                 cell: ({ row }) => {
                     const status = row.original.status;
+                    const isSoldOut = status === 'active' && row.original.stock <= 0;
                     return (
                         <div className="flex justify-center">
-                            {status === 'active' && (
+                            {status === 'active' && !isSoldOut && (
                                 <Badge className="gap-1 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 border-emerald-500/20 shadow-none">
                                     <CheckCircle2 className="h-3 w-3" />
                                     Active
                                 </Badge>
                             )}
-                            {status === 'draft' && (
+                            {isSoldOut && (
                                 <Badge
                                     variant="outline"
                                     className="gap-1 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border-amber-500/20 shadow-none"
                                 >
                                     <Clock className="h-3 w-3" />
-                                    Draft
+                                    Sold Out
                                 </Badge>
                             )}
                             {status === 'archived' && (
@@ -492,7 +519,7 @@ export default function Products({ products, categories }: ProductsPageProps) {
                                         ) : product.status === 'active' ? (
                                             <>
                                                 <X className="mr-2 h-4 w-4" />{' '}
-                                                Mark as Draft
+                                                Mark as Sold Out
                                             </>
                                         ) : (
                                             <>
@@ -507,16 +534,25 @@ export default function Products({ products, categories }: ProductsPageProps) {
                                         <Edit2 className="mr-2 h-4 w-4" /> Edit
                                         Product
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        onClick={() =>
-                                            openDeleteDialog(product)
-                                        }
-                                        className="text-destructive"
-                                        disabled={isDeleting}
-                                    >
-                                        <Trash2 className="mr-2 h-4 w-4" />{' '}
-                                        Delete / Archive
-                                    </DropdownMenuItem>
+                                    {product.status === 'archived' ? (
+                                        <DropdownMenuItem
+                                            onClick={() => handleRestoreProduct(product)}
+                                            className="text-emerald-600"
+                                            disabled={isRestoring}
+                                        >
+                                            <ArchiveRestore className="mr-2 h-4 w-4" />{' '}
+                                            Restore & Activate
+                                        </DropdownMenuItem>
+                                    ) : (
+                                        <DropdownMenuItem
+                                            onClick={() => openDeleteDialog(product)}
+                                            className="text-destructive"
+                                            disabled={isDeleting}
+                                        >
+                                            <Trash2 className="mr-2 h-4 w-4" />{' '}
+                                            Delete / Archive
+                                        </DropdownMenuItem>
+                                    )}
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         </div>

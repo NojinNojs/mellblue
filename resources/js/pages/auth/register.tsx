@@ -35,15 +35,15 @@ export default function Register() {
 
     return (
         <AuthLayout
-            title="Create an account"
-            description="Enter your details below to create your account"
+            title="Buat Akun Baru"
+            description="Masukkan detail Anda di bawah untuk membuat akun"
             bgImage="/ocean-milk-2.webp"
         >
-            <Head title="Register" />
+            <Head title="Daftar" />
             <form onSubmit={submit} className="space-y-6">
                 <div className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="name">Name</Label>
+                        <Label htmlFor="name">Nama</Label>
                         <Input
                             id="name"
                             type="text"
@@ -51,7 +51,7 @@ export default function Register() {
                             autoFocus
                             autoComplete="name"
                             name="name"
-                            placeholder="Enter your full name"
+                            placeholder="Masukkan nama lengkap Anda"
                             className="h-11"
                             value={data.name}
                             onChange={(e) => setData('name', e.target.value)}
@@ -67,7 +67,7 @@ export default function Register() {
                             required
                             autoComplete="email"
                             name="email"
-                            placeholder="Enter your email"
+                            placeholder="Masukkan email Anda"
                             className="h-11"
                             value={data.email}
                             onChange={(e) => setData('email', e.target.value)}
@@ -76,7 +76,7 @@ export default function Register() {
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="password">Password</Label>
+                        <Label htmlFor="password">Kata Sandi</Label>
                         <div className="relative">
                             <Input
                                 id="password"
@@ -84,7 +84,7 @@ export default function Register() {
                                 required
                                 autoComplete="new-password"
                                 name="password"
-                                placeholder="Enter your password"
+                                placeholder="Masukkan kata sandi Anda"
                                 className="h-11 pr-10"
                                 value={data.password}
                                 onChange={(e) => {
@@ -110,7 +110,7 @@ export default function Register() {
 
                     <div className="space-y-2">
                         <Label htmlFor="password_confirmation">
-                            Confirm Password
+                            Konfirmasi Kata Sandi
                         </Label>
                         <div className="relative">
                             <Input
@@ -123,7 +123,7 @@ export default function Register() {
                                 required
                                 autoComplete="new-password"
                                 name="password_confirmation"
-                                placeholder="Confirm your password"
+                                placeholder="Konfirmasi kata sandi Anda"
                                 className="h-11 pr-10"
                                 value={data.password_confirmation}
                                 onChange={(e) =>
@@ -159,17 +159,17 @@ export default function Register() {
                         data-test="register-user-button"
                     >
                         {processing && <Spinner />}
-                        Create account
+                        Buat Akun
                     </Button>
                 </div>
 
                 <div className="text-center text-sm text-muted-foreground">
-                    Already have an account?{' '}
+                    Sudah punya akun?{' '}
                     <TextLink
                         href={login()}
                         className="font-medium text-foreground hover:underline"
                     >
-                        Log in
+                        Masuk
                     </TextLink>
                 </div>
             </form>

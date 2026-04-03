@@ -52,14 +52,17 @@ class OrderController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'product_id' => 'required|exists:products,id',
-            'variant_id' => 'nullable|exists:product_variants,id',
-            'quantity' => 'required|integer|min:1',
-            'shipping_name' => 'required|string|max:100',
-            'shipping_phone' => 'required|string|max:20',
+            'product_id'      => 'required|exists:products,id',
+            'variant_id'      => 'nullable|exists:product_variants,id',
+            'quantity'        => 'required|integer|min:1',
+            'shipping_name'   => 'required|string|max:100',
+            'shipping_phone'  => ['required', 'string', 'regex:/^08[0-9]{8,11}$/'],
             'shipping_address' => 'required|string',
-            'shipping_city' => 'required|string|max:100',
-            'notes' => 'nullable|string',
+            'shipping_city'   => 'required|string|max:100',
+            'notes'           => 'nullable|string',
+        ], [
+            'shipping_phone.required' => 'Phone number is required.',
+            'shipping_phone.regex'    => 'Phone number must be a valid Indonesian number starting with 08 (e.g. 081234567890), 10–13 digits.',
         ]);
 
         try {
@@ -149,25 +152,39 @@ class OrderController extends Controller
 
         $validated = $request->validate([
             'sender_account_number' => 'required|string|max:255',
-            'proof_image' => 'required|image|max:5120', // 5MB max
+            'proof_image' => 'required|file|image|max:51200',
         ]);
 
-        $path = $request->file('proof_image')->store('payments', 'public');
+        $file = $request->file('proof_image');
+
+        if (!$file || !$file->isValid()) {
+            return back()->withErrors(['proof_image' => 'Upload gagal. Pilih gambar yang valid dan coba lagi.']);
+        }
+
+        // Use getPathname() + file_get_contents() — same approach that works
+        // for admin product images, avoiding Windows temp-path issues with store()
+        $extension = strtolower($file->getClientOriginalExtension() ?: 'jpg');
+        $filename   = 'payments/' . time() . '_' . \Illuminate\Support\Str::random(10) . '.' . $extension;
+        $contents   = file_get_contents($file->getPathname());
+
+        \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $contents);
+
+        $path = $filename;
 
         \App\Models\Payment::create([
-            'order_id' => $order->id,
-            'type' => 'payment',
-            'method' => 'bank_transfer',
+            'order_id'        => $order->id,
+            'type'            => 'payment',
+            'method'          => 'bank_transfer',
             'proof_image_url' => $path,
-            'sender_account' => $validated['sender_account_number'],
-            'amount' => $order->total,
-            'status' => 'pending',
-            'created_at' => now(),
+            'sender_account'  => $validated['sender_account_number'],
+            'amount'          => $order->total,
+            'status'          => 'pending',
+            'created_at'      => now(),
         ]);
 
         $order->update(['status' => 'waiting_confirmation']);
 
-        return back()->with('success', 'Payment proof uploaded successfully.');
+        return back()->with('success', 'Bukti pembayaran berhasil dikirim!');
     }
     /**
      * Mark the order as completed (by the customer).

@@ -20,20 +20,20 @@ export function LatestProducts({ latestProducts }: LatestProductsProps) {
                         transition={{ duration: 0.5 }}
                     >
                         <span className="mb-2 inline-block text-xs font-semibold tracking-widest text-brand-blue-dark uppercase">
-                            Fresh From the Kitchen
+                            Segar dari Dapur
                         </span>
                         <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-                            Our Signature Products
+                            Produk Unggulan Kami
                         </h2>
                         <p className="mt-2 text-sm text-muted-foreground sm:text-base">
-                            Crafted with care for your daily escape.
+                            Dibuat dengan penuh cinta untuk menemani harimu.
                         </p>
                     </motion.div>
                     <Link
                         href="/products"
                         className="hidden items-center gap-2 text-sm font-semibold text-brand-blue-dark hover:underline sm:flex"
                     >
-                        View all <ArrowRight className="h-4 w-4" />
+                        Lihat semua <ArrowRight className="h-4 w-4" />
                     </Link>
                 </div>
 
@@ -59,7 +59,7 @@ export function LatestProducts({ latestProducts }: LatestProductsProps) {
                         href="/products"
                         className="flex items-center gap-2 text-sm font-semibold text-brand-blue-dark hover:underline"
                     >
-                        View all products <ArrowRight className="h-4 w-4" />
+                        Lihat semua produk <ArrowRight className="h-4 w-4" />
                     </Link>
                 </div>
             </div>

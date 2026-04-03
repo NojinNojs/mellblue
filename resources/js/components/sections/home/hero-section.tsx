@@ -85,9 +85,11 @@ export function HeroSection() {
                             variants={textVariants}
                             className="font-display text-5xl leading-[1.08] font-bold tracking-tight text-foreground md:text-6xl lg:text-7xl"
                         >
-                            Refresh your{' '}
+                            Teman setia{' '}
+                            <br />
+                            di setiap{' '}
                             <span className="relative inline-block">
-                                day
+                                momenmu.
                                 {/* Decorative animated underline — layered strokes */}
                                 <svg
                                     viewBox="0 0 220 18"
@@ -130,8 +132,6 @@ export function HeroSection() {
                                     />
                                 </svg>
                             </span>
-                            <br />
-                            with Ocean Milk.
                         </motion.h1>
 
                         {/* Sub-copy using our established narrative copy */}
@@ -139,15 +139,15 @@ export function HeroSection() {
                             variants={textVariants}
                             className="max-w-md text-base leading-relaxed text-foreground/80 md:text-lg"
                         >
-                            Experience the clear, crystalline freshness of our signature{' '}
-                            <span className="font-semibold text-brand-blue-dark">
+                            Paduan menyegarkan dari{' '}
+                            <span className="font-semibold text-brand-blue-dark italic">
                                 Ocean Milk
-                            </span>
-                            , perfectly paired with the dense, legit richness of our artisanal{' '}
+                            </span>{' '}
+                            dan manis legitnya{' '}
                             <span className="font-semibold text-foreground">
                                 Fudgy Brownies
-                            </span>
-                            . Your ultimate daily escape.
+                            </span>{' '}
+                            buatan kami hadir khusus buat balikin semangatmu. Rasanya yang pas bikin kamu merasa dipeluk dan hari yang lelah jadi lebih tenang.
                         </motion.p>
 
                         {/* CTA row */}
@@ -156,12 +156,12 @@ export function HeroSection() {
                             className="mt-2 flex flex-wrap items-center justify-center gap-4 lg:justify-start"
                         >
                             <CTAButton
-                                label="Explore Our Treats"
+                                label="Lihat Produk Kami"
                                 href="/products"
                                 variant="primary"
                             />
                             <CTAButton
-                                label="Contact Us"
+                                label="Hubungi Kami"
                                 href="/contact"
                                 variant="outline"
                                 showArrow={false}
@@ -206,7 +206,7 @@ export function HeroSection() {
                                     damping: 20,
                                 }}
                             >
-                                <p className="text-[10px] font-bold tracking-wider text-brand-blue-dark uppercase">
+                                <p className="text-[10px] font-bold tracking-wider text-foreground/60 uppercase">
                                     Since 2026
                                 </p>
                                 <p className="text-xs font-semibold text-foreground">
@@ -226,10 +226,10 @@ export function HeroSection() {
                                     damping: 22,
                                 }}
                             >
-                                <p className="mb-0.5 text-[10px] font-bold tracking-wider text-brand-blue-dark/70 uppercase">
-                                    Signature Drink
+                                <p className="mb-0.5 text-[10px] font-bold tracking-wider text-foreground/60 uppercase">
+                                    Minuman Andalan
                                 </p>
-                                <p className="text-sm font-bold text-brand-blue-dark">
+                                <p className="text-sm font-bold text-foreground">
                                     Ocean Milk
                                 </p>
                             </motion.div>
@@ -246,7 +246,7 @@ export function HeroSection() {
                 transition={{ delay: 2, duration: 0.6 }}
             >
                 <span className="text-[10px] font-medium tracking-[0.2em] text-foreground/40 uppercase">
-                    Scroll
+                    Gulir
                 </span>
                 <motion.div
                     className="h-8 w-px bg-gradient-to-b from-foreground/40 to-transparent"

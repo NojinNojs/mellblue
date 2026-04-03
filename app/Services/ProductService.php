@@ -58,7 +58,7 @@ class ProductService
             'base_price' => $product->base_price,
             'stock' => $product->stock,
             'available_stock' => $product->available_stock,
-            'status' => $product->status,
+            'status' => $product->trashed() ? 'archived' : $product->status,
             'category_id' => $product->category_id,
             'category' => $product->category?->name,
             'images' => $product->images->map(fn($img) => [

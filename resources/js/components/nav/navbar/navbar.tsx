@@ -30,14 +30,14 @@ export default function Navbar() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     const navLinks = [
-        { href: '/', label: 'Home', icon: Home },
-        { href: '/products', label: 'Products', icon: PackageOpen },
+        { href: '/', label: 'Beranda', icon: Home },
+        { href: '/products', label: 'Menu Kami', icon: PackageOpen },
     ];
 
     if (auth.user) {
         navLinks.push({
             href: '/orders',
-            label: 'My Orders',
+            label: 'Pesanan Saya',
             icon: ShoppingBag,
         });
     }
@@ -147,7 +147,7 @@ export default function Navbar() {
                                                 className="flex cursor-pointer items-center"
                                             >
                                                 <Settings className="mr-2 h-4 w-4" />
-                                                Settings
+                                                Pengaturan
                                             </Link>
                                         </DropdownMenuItem>
                                         <DropdownMenuSeparator />
@@ -159,7 +159,7 @@ export default function Navbar() {
                                                 className="flex w-full cursor-pointer items-center text-red-600"
                                             >
                                                 <LogOut className="mr-2 h-4 w-4" />
-                                                Logout
+                                                Keluar
                                             </Link>
                                         </DropdownMenuItem>
                                     </DropdownMenuContent>
@@ -171,13 +171,13 @@ export default function Navbar() {
                                         asChild
                                         className="hover:text-brand-blue-dark"
                                     >
-                                        <Link href="/login">Login</Link>
+                                        <Link href="/login">Masuk</Link>
                                     </Button>
                                     <Button
                                         asChild
                                         className="bg-brand-blue-dark text-white hover:bg-brand-blue-dark/90"
                                     >
-                                        <Link href="/register">Register</Link>
+                                        <Link href="/register">Daftar</Link>
                                     </Button>
                                 </div>
                             )}
@@ -273,7 +273,7 @@ export default function Navbar() {
                                             {auth.user.role === 'admin' && (
                                                 <Link
                                                     href="/admin"
-                                                    className="flex h-10 w-10 items-center justify-center rounded-full border border-input bg-background transition-colors hover:bg-accent hover:text-accent-foreground"
+                                                    className="flex h-10 w-10 items-center justify-center rounded-full border border-input bg-background transition-colors hover:bg-brand-muted hover:text-brand-blue-dark"
                                                     onClick={() =>
                                                         setMobileMenuOpen(false)
                                                     }
@@ -283,7 +283,7 @@ export default function Navbar() {
                                             )}
                                             <Link
                                                 href="/settings"
-                                                className="flex h-10 w-10 items-center justify-center rounded-full border border-input bg-background transition-colors hover:bg-accent hover:text-accent-foreground"
+                                                className="flex h-10 w-10 items-center justify-center rounded-full border border-input bg-background transition-colors hover:bg-brand-muted hover:text-brand-blue-dark"
                                                 onClick={() =>
                                                     setMobileMenuOpen(false)
                                                 }

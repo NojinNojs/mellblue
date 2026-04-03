@@ -3,7 +3,6 @@ import { cn } from '@/lib/utils';
 import {
     AlertCircle,
     Ban,
-    Check,
     CheckCircle,
     Clock,
     Package,
@@ -47,55 +46,49 @@ const statusConfig: Record<
         label: 'Pending Payment',
         variant: 'outline',
         icon: Clock,
-        className:
-            'border-yellow-500 text-yellow-700 bg-yellow-50   ',
+        className: 'border-yellow-500 text-yellow-700 bg-yellow-50',
     },
     waiting_confirmation: {
         label: 'Waiting Confirmation',
         variant: 'outline',
         icon: AlertCircle,
-        className:
-            'border-orange-500 text-orange-700 bg-orange-50   ',
+        className: 'border-amber-500 text-amber-700 bg-amber-50',
     },
     paid: {
         label: 'Paid',
         variant: 'outline',
         icon: CheckCircle,
-        className:
-            'border-green-500 text-green-700 bg-green-50   ',
+        className: 'border-green-500 text-green-700 bg-green-50',
     },
     payment_rejected: {
         label: 'Payment Rejected',
-        variant: 'destructive',
+        variant: 'outline',
         icon: XCircle,
-        className: '',
+        className: 'border-red-500 text-red-700 bg-red-50',
     },
     processing: {
         label: 'Processing',
         variant: 'outline',
         icon: Package,
-        className:
-            'border-blue-500 text-blue-700 bg-blue-50   ',
+        className: 'border-blue-500 text-blue-700 bg-blue-50',
     },
     shipping: {
         label: 'Shipping',
         variant: 'outline',
         icon: Truck,
-        className:
-            'border-purple-500 text-purple-700 bg-purple-50   ',
+        className: 'border-indigo-500 text-indigo-700 bg-indigo-50',
     },
     completed: {
         label: 'Completed',
-        variant: 'default',
-        icon: Check,
-        className:
-            'bg-green-600 hover:bg-green-700  ',
+        variant: 'outline',
+        icon: CheckCircle,
+        className: 'border-green-600 text-green-800 bg-green-100',
     },
     cancelled: {
         label: 'Cancelled',
-        variant: 'secondary',
+        variant: 'outline',
         icon: Ban,
-        className: ' ',
+        className: 'border-red-500 text-red-700 bg-red-50',
     },
 };
 

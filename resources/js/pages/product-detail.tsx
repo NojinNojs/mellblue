@@ -25,7 +25,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                     >
                         <Link href="/products">
                             <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Products
+                            Kembali ke Produk
                         </Link>
                     </Button>
                 </div>

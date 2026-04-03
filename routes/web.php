@@ -48,6 +48,8 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\EnsureUserIsAdmin::c
 
         // Product management
         Route::delete('products/bulk-destroy', [\App\Http\Controllers\Admin\ProductController::class, 'bulkDestroy'])->name('products.bulk-destroy');
+        Route::post('products/bulk-restore', [\App\Http\Controllers\Admin\ProductController::class, 'bulkRestore'])->name('products.bulk-restore');
+        Route::post('products/{id}/restore', [\App\Http\Controllers\Admin\ProductController::class, 'restore'])->name('products.restore');
         Route::patch('products/{product}/toggle-status', [\App\Http\Controllers\Admin\ProductController::class, 'toggleStatus'])->name('products.toggle-status');
         Route::resource('products', \App\Http\Controllers\Admin\ProductController::class)->except(['show', 'create', 'edit']);
 

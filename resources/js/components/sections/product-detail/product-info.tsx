@@ -47,15 +47,15 @@ export function ProductInfo({ product }: ProductInfoProps) {
             <div className="mb-6 flex flex-wrap items-center gap-2">
                 {isCurrentlyInStock ? (
                     <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
-                        <Check className="mr-1 h-3 w-3" /> In Stock
+                        <Check className="mr-1 h-3 w-3" /> Tersedia
                     </Badge>
                 ) : (
                     <Badge variant="destructive">
-                        <PackageX className="mr-1 h-3 w-3" /> Out of Stock
+                        <PackageX className="mr-1 h-3 w-3" /> Habis
                     </Badge>
                 )}
                 <Badge variant="outline" className="text-muted-foreground">
-                    {product.category || 'Uncategorized'}
+                    {product.category || 'Tanpa Kategori'}
                 </Badge>
             </div>
 
@@ -76,7 +76,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
 
             {/* Description */}
             <div className="mb-8 space-y-4">
-                <h3 className="text-lg font-semibold">About this Product</h3>
+                <h3 className="text-lg font-semibold">Tentang Produk Ini</h3>
                 <p className="leading-relaxed whitespace-pre-wrap text-muted-foreground">
                     {product.description}
                 </p>
@@ -85,7 +85,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
             {/* Variants Selector */}
             {hasVariants && (
                 <div className="mb-8 space-y-4">
-                    <h3 className="text-lg font-semibold">Select Option</h3>
+                    <h3 className="text-lg font-semibold">Pilih Varian</h3>
                     <div className="flex flex-wrap gap-2">
                         {product
                             .variants!.filter((v) => v.status !== 'archived')
@@ -144,16 +144,16 @@ export function ProductInfo({ product }: ProductInfoProps) {
                             href={`/checkout?product_id=${product.public_id}${selectedVariant ? `&variant_id=${selectedVariant.id}` : ''}`}
                         >
                             <ShoppingBag className="mr-2 h-5 w-5" />
-                            Order Now
+                            Pesan Sekarang
                         </Link>
                     ) : (
-                        <span>Currently Unavailable</span>
+                        <span>Saat Ini Tidak Tersedia</span>
                     )}
                 </Button>
             </motion.div>
 
             <p className="mt-4 text-center text-sm text-muted-foreground">
-                Stock remaining:{' '}
+                Sisa stok:{' '}
                 <span className="font-semibold">{currentStock}</span>
             </p>
         </div>

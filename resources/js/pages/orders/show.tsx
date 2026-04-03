@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem, type Order } from '@/types';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import {
     AlertCircle,
     ArrowLeft,
@@ -43,10 +43,17 @@ export default function OrderDetail({ order }: OrderDetailPageProps) {
         { title: `Order #${order.order_number}`, href: `/orders/${order.order_number}` },
     ];
 
-    const { data, setData, post, processing } = useForm({
-        proof_image: null as File | null,
-        sender_account_number: '',
-    });
+    // Payment proof — use manual FormData + router.post for reliable file upload
+    const [proofImage, setProofImage] = useState<File | null>(null);
+    const [senderAccount, setSenderAccount] = useState('');
+    const [uploadProcessing, setUploadProcessing] = useState(false);
+
+    const data = { proof_image: proofImage, sender_account_number: senderAccount };
+    const setData = (field: 'proof_image' | 'sender_account_number', value: string | File | null) => {
+        if (field === 'proof_image') setProofImage(value as File | null);
+        else setSenderAccount(value as string);
+    };
+    const processing = uploadProcessing;
 
     const { post: cancelOrder, processing: cancelProcessing } = useForm();
     const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
@@ -63,7 +70,17 @@ export default function OrderDetail({ order }: OrderDetailPageProps) {
 
     const submitPaymentProof: FormEventHandler = (e) => {
         e.preventDefault();
-        post(`/orders/${order.order_number}/payment`);
+        if (!proofImage) return;
+
+        const formData = new FormData();
+        formData.append('proof_image', proofImage);
+        formData.append('sender_account_number', senderAccount);
+
+        setUploadProcessing(true);
+        router.post(`/orders/${order.order_number}/payment`, formData, {
+            forceFormData: true,
+            onFinish: () => setUploadProcessing(false),
+        });
     };
 
     const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
@@ -127,10 +144,10 @@ export default function OrderDetail({ order }: OrderDetailPageProps) {
                         </Button>
                         <div>
                             <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-                                Order Details
+                                Detail Pesanan
                             </h1>
                             <p className="text-sm text-muted-foreground sm:text-base">
-                                {order.order_number} • Placed on{' '}
+                                {order.order_number} • Dipesan pada{' '}
                                 {order.created_at
                                     ? new Date(order.created_at).toLocaleDateString(
                                           'id-ID',
@@ -152,15 +169,21 @@ export default function OrderDetail({ order }: OrderDetailPageProps) {
                                 className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-md transition-all hover:bg-primary/90 hover:shadow-lg active:scale-95"
                             >
                                 <Download className="h-4 w-4" />
-                                Download Receipt
+                                Unduh Resi
                             </a>
                         )}
                         <Badge
                             variant={getStatusColor(order.status) as 'default' | 'secondary' | 'destructive' | 'outline'}
-                            className="flex items-center justify-center gap-2 px-4 py-1.5 text-sm font-medium tracking-wide uppercase"
+                            className="flex items-center justify-center gap-2 px-4 py-1.5 text-sm font-medium tracking-wide"
                         >
                             {getStatusIcon(order.status)}
-                            {order.status.replace('_', ' ')}
+                            {order.status === 'pending' || order.status === 'pending_payment' ? 'Menunggu' 
+                                : order.status === 'paid' ? 'Sudah Dibayar' 
+                                : order.status === 'shipping' ? 'Dikirim' 
+                                : order.status === 'completed' ? 'Selesai' 
+                                : order.status === 'cancelled' ? 'Batal' 
+                                : order.status === 'payment_rejected' ? 'Ditolak' 
+                                : order.status}
                         </Badge>
                     </div>
                 </div>
@@ -191,7 +214,7 @@ export default function OrderDetail({ order }: OrderDetailPageProps) {
                                         className="w-full border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
                                     >
                                         <XCircle className="mr-2 h-4 w-4" />
-                                        Cancel Order
+                                        Batalkan Pesanan
                                     </Button>
                                 ) : undefined
                             }
@@ -216,7 +239,7 @@ export default function OrderDetail({ order }: OrderDetailPageProps) {
                                 <Card className="border-2 border-primary/20 shadow-lg ring-4 ring-primary/5">
                                     <CardHeader className="bg-primary/5 p-6 pb-4 text-center">
                                         <CardTitle className="text-lg font-medium text-primary">
-                                            Payment Deadline
+                                            Batas Waktu Pembayaran
                                         </CardTitle>
                                         <div className="flex justify-center pt-2">
                                             <CountdownTimer
@@ -229,9 +252,7 @@ export default function OrderDetail({ order }: OrderDetailPageProps) {
                                     </CardHeader>
                                     <CardContent className="p-6 text-center">
                                         <p className="text-sm text-muted-foreground">
-                                            Please complete your payment before
-                                            the deadline to avoid automatic
-                                            cancellation.
+                                            Yuk selesaikan belanjamu sebelum waktunya habis, biar pesananmu nggak otomatis jadi batal ya.
                                         </p>
                                     </CardContent>
                                 </Card>
@@ -243,7 +264,7 @@ export default function OrderDetail({ order }: OrderDetailPageProps) {
 
                             <PaymentProofCard
                                 orderStatus={order.status}
-                                payment={order.payment as any}
+                                payment={order.payment as import('@/types').Payment}
                                 processing={processing}
                                 data={data}
                                 setData={setData}
@@ -260,15 +281,10 @@ export default function OrderDetail({ order }: OrderDetailPageProps) {
                                             </div>
                                             <div className="flex-1">
                                                 <h3 className="text-lg font-bold text-foreground">
-                                                    Payment Under Review
+                                                    Pembayaran Lagi Dicek
                                                 </h3>
                                                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                                                    Thank you for uploading your
-                                                    payment proof! Our team is
-                                                    currently verifying your
-                                                    payment. This process
-                                                    typically takes 1-2 hours
-                                                    during business hours.
+                                                    Makasih ya udah unggah bukti tf mu! Tim kami sekarang lagi nge-verifikasi. Biasanya cuma butuh sekitar 1-2 jam pada jam operasional kok.
                                                 </p>
                                             </div>
                                         </div>
@@ -286,10 +302,10 @@ export default function OrderDetail({ order }: OrderDetailPageProps) {
                                             </div>
                                             <div className="flex-1">
                                                 <h3 className="text-xl font-bold text-foreground">
-                                                    Package Received?
+                                                    Pesanan Sudah Sampai?
                                                 </h3>
                                                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                                                    If you have received your Items and everything is in perfect condition, please confirm receipt to complete your order.
+                                                    Kalau semua pesananmu udah sampai dengan aman, bantu kami dengan konfirmasi di sini ya biar pesananmu berstatus selesai.
                                                 </p>
                                             </div>
                                         </div>
@@ -299,7 +315,7 @@ export default function OrderDetail({ order }: OrderDetailPageProps) {
                                             disabled={completeProcessing}
                                         >
                                             <CheckCircle className="mr-2 h-5 w-5" />
-                                            Confirm Receipt
+                                            Konfirmasi Pesanan Sampai
                                         </Button>
                                     </div>
                                 </Card>
@@ -315,15 +331,14 @@ export default function OrderDetail({ order }: OrderDetailPageProps) {
             >
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Cancel Order</DialogTitle>
+                        <DialogTitle>Batalkan Pesanan</DialogTitle>
                         <DialogDescription>
-                            Are you sure you want to cancel this order? This
-                            action cannot be undone.
+                            Apakah kamu yakin ingin membatalkan pesanan ini? Aksi ini tidak bisa dikembalikan lho.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
                         <DialogClose asChild>
-                            <Button variant="outline">Keep Order</Button>
+                            <Button variant="outline">Kembali</Button>
                         </DialogClose>
                         <Button
                             variant="destructive"
@@ -331,8 +346,8 @@ export default function OrderDetail({ order }: OrderDetailPageProps) {
                             disabled={cancelProcessing}
                         >
                             {cancelProcessing
-                                ? 'Cancelling...'
-                                : 'Yes, Cancel Order'}
+                                ? 'Membatalkan...'
+                                : 'Ya, Batalkan'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -345,20 +360,20 @@ export default function OrderDetail({ order }: OrderDetailPageProps) {
             >
                 <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
-                        <DialogTitle className="text-2xl font-bold">Confirm Receipt</DialogTitle>
+                        <DialogTitle className="text-2xl font-bold">Konfirmasi Penerimaan</DialogTitle>
                         <DialogDescription className="pt-2 text-base">
-                            Have you received all the items in your order and are they in good condition? This will mark your order as completed.
+                            Tandai pesanan ini selesai jika kamu sudah menerima semua barangnya dengan baik ya.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="flex flex-col gap-4 py-4">
                         <div className="rounded-lg bg-muted/50 p-4 border border-border">
-                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Order Information</p>
+                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Info Orderan</p>
                             <p className="text-sm font-medium">{order.order_number}</p>
                         </div>
                     </div>
                     <DialogFooter className="gap-2 sm:gap-0">
                         <DialogClose asChild>
-                            <Button variant="outline" className="flex-1 py-6">Not Yet</Button>
+                            <Button variant="outline" className="flex-1 py-6">Belum Sampai</Button>
                         </DialogClose>
                         <Button
                             className="flex-1 py-6 font-bold"
@@ -366,8 +381,8 @@ export default function OrderDetail({ order }: OrderDetailPageProps) {
                             disabled={completeProcessing}
                         >
                             {completeProcessing
-                                ? 'Processing...'
-                                : 'Yes, Received'}
+                                ? 'Memproses...'
+                                : 'Ya, Sudah Diterima'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

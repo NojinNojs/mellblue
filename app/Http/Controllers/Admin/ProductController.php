@@ -21,6 +21,7 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $products = Product::with(['images', 'category:id,name'])
+            ->withTrashed()
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(fn($product) => $this->productService->formatProduct($product));
@@ -120,10 +121,15 @@ class ProductController extends Controller
 
     public function destroy(Product $product)
     {
-        foreach ($product->images as $image) {
-            $this->deleteImageFile($image->image_url);
+        $hasActiveOrders = $product->orderItems()->whereHas('order', function ($query) {
+            $query->whereNotIn('status', ['completed', 'cancelled']);
+        })->exists();
+
+        if ($hasActiveOrders) {
+            return redirect()->back()->with('error', 'Cannot delete product: It is still linked to active orders. Please wait until those orders are completed or cancelled.');
         }
 
+        $product->update(['status' => 'archived']);
         $product->delete(); // SoftDelete
 
         return redirect()->back()->with('success', 'Product archived successfully!');
@@ -137,19 +143,35 @@ class ProductController extends Controller
         ]);
 
         $products = Product::whereIn('id', $request->ids)->get();
+        $deletedCount = 0;
+        $skippedCount = 0;
 
         foreach ($products as $product) {
-            foreach ($product->images as $image) {
-                $this->deleteImageFile($image->image_url);
+            $hasActiveOrders = $product->orderItems()->whereHas('order', function ($query) {
+                $query->whereNotIn('status', ['completed', 'cancelled']);
+            })->exists();
+
+            if ($hasActiveOrders) {
+                $skippedCount++;
+                continue;
             }
+
+            $product->update(['status' => 'archived']);
             $product->delete();
+            $deletedCount++;
+        }
+
+        if ($skippedCount > 0) {
+            return redirect()->back()->with('error', "Archived {$deletedCount} products. Skipped {$skippedCount} products because they have active orders.");
         }
 
         return redirect()->back()->with('success', 'Selected products archived successfully!');
     }
 
-    public function toggleStatus(Request $request, Product $product)
+    public function toggleStatus(Request $request, $id)
     {
+        $product = Product::withTrashed()->findOrFail($id);
+        
         $request->validate([
             'status' => 'required|in:active,sold_out,archived',
         ]);
@@ -157,6 +179,36 @@ class ProductController extends Controller
         $product->update(['status' => $request->status]);
 
         return back()->with('success', 'Product status updated successfully.');
+    }
+
+    public function restore($id)
+    {
+        $product = Product::withTrashed()->findOrFail($id);
+        $product->restore();
+
+        if ($product->status === 'archived') {
+            $product->update(['status' => 'active']);
+        }
+
+        return redirect()->back()->with('success', 'Product restored and activated successfully!');
+    }
+
+    public function bulkRestore(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+        ]);
+
+        $products = Product::withTrashed()->whereIn('id', $request->ids)->get();
+
+        foreach ($products as $product) {
+            $product->restore();
+            if ($product->status === 'archived') {
+                $product->update(['status' => 'active']);
+            }
+        }
+
+        return redirect()->back()->with('success', 'Selected products restored and activated successfully!');
     }
 
     // ─── Private Helpers ──────────────────────────────────────────────────────

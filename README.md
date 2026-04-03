@@ -61,72 +61,49 @@
 
 ## 🛠️ Installation
 
-### 1. Clone the repository
-
 ```bash
+# 1. Clone
 git clone https://github.com/NojinNojs/mellblue.git
 cd mellblue
-```
 
-### 2. Install dependencies
-
-```bash
+# 2. Install dependencies
 composer install
 npm install
-```
 
-### 3. Environment setup
-
-```bash
+# 3. Environment
 cp .env.example .env
-```
+# → Edit .env: set DB_DATABASE, DB_USERNAME, DB_PASSWORD, APP_URL
+# → Also set APP_PHONE, APP_INSTAGRAM, APP_TIKTOK for footer/contact page
 
-Open `.env` and configure:
-- `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` — your MySQL credentials
-- `APP_NAME` — your store name (default: `MELLBLUE`)
-- `APP_PHONE` — contact phone number
-- `APP_INSTAGRAM`, `APP_TIKTOK` — social media links
-
-### 4. Generate application key
-
-```bash
+# 4. Generate app key
 php artisan key:generate
-```
 
-### 5. Run migrations
-
-```bash
+# 5. Migrate database
 php artisan migrate
-```
 
-### 6. Create storage symlink
-
-```bash
+# 6. Create storage symlink  ← DON'T SKIP — images won't show without this
 php artisan storage:link
-```
 
----
-
-## 💻 Development
-
-Start all development servers concurrently (Laravel, Queue, Vite):
-
-```bash
+# 7. Start dev server
 composer run dev
 ```
 
-Access the application at `http://localhost:8000`.
+Access the app at `http://localhost:8000`.
 
 ---
 
 ## 📦 Production
 
 ```bash
+composer install --optimize-autoloader --no-dev
 npm run build
-php artisan optimize
+php artisan key:generate          # skip if APP_KEY already set
 php artisan migrate --force
+php artisan storage:link          # ← required for images
+php artisan optimize
 ```
 
+Set `APP_ENV=production` and `APP_DEBUG=false` in `.env`.
 Point your web server (Nginx or Apache) to the `public/` directory.
 
 ---
@@ -137,6 +114,11 @@ Point your web server (Nginx or Apache) to the `public/` directory.
 2. Reload Laragon — it will auto-create a virtual host (e.g., `http://mellblue.test`)
 3. Ensure PHP 8.2+ is selected (**Menu > PHP > Version**)
 4. Create the database via HeidiSQL, then run migrations
+5. **Fix file uploads** — open `C:\laragon\bin\php\php-8.3.x\php.ini` and set:
+   ```ini
+   upload_tmp_dir = "C:/laragon/tmp"
+   ```
+   Then create the folder and restart Laragon. Without this, payment proof upload will crash.
 
 ---
 

@@ -115,16 +115,15 @@ export default function AdminOrderShow({ order }: { order: Order }) {
 
     const getStatusBadge = (status: string) => {
         const variants: Record<string, string> = {
-            pending: 'bg-zinc-100 text-zinc-800 border-zinc-200',
-            pending_payment: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-            waiting_confirmation:
-                'bg-orange-100 text-orange-800 border-orange-200',
-            paid: 'bg-blue-100 text-blue-800 border-blue-200',
-            processing: 'bg-indigo-100 text-indigo-800 border-indigo-200',
-            shipping: 'bg-cyan-100 text-cyan-800 border-cyan-200',
-            completed: 'bg-green-100 text-green-800 border-green-200',
-            cancelled: 'bg-red-100 text-red-800 border-red-200',
-            payment_rejected: 'bg-red-200 text-red-900 border-red-300',
+            pending: 'bg-yellow-50 text-yellow-700 border-yellow-400',
+            pending_payment: 'bg-yellow-50 text-yellow-700 border-yellow-400',
+            waiting_confirmation: 'bg-amber-50 text-amber-700 border-amber-400',
+            paid: 'bg-green-50 text-green-700 border-green-400',
+            processing: 'bg-blue-50 text-blue-700 border-blue-400',
+            shipping: 'bg-indigo-50 text-indigo-700 border-indigo-400',
+            completed: 'bg-green-100 text-green-800 border-green-500',
+            cancelled: 'bg-red-50 text-red-700 border-red-400',
+            payment_rejected: 'bg-red-100 text-red-800 border-red-500',
         };
 
         return (

@@ -15,7 +15,6 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { PackageOpen } from 'lucide-react';
-import { Button } from './button';
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];

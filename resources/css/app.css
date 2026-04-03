@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap');
 
 @import 'tailwindcss';
 
@@ -9,12 +9,12 @@
 
 @theme {
     --font-sans:
-        'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif,
+        'Poppins', ui-sans-serif, system-ui, sans-serif,
         'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
         'Noto Color Emoji';
 
-    --font-display:
-        'DM Serif Display', ui-serif, Georgia, Cambria, 'Times New Roman', serif;
+    /* No separate display font — Poppins is used for everything per GSM */
+    --font-display: 'Poppins', ui-sans-serif, system-ui, sans-serif;
 
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
@@ -63,19 +63,19 @@
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
 
-    /* MELLBLUE Moodboard brand tokens */
-    --color-brand-blue: #9accde; /* Ocean Milk Light Blue */
-    --color-brand-blue-dark: #003366; /* Deep ocean blue for text contrast */
-    --color-brand-yellow: #f4d77d; /* Accent Yellow */
-    --color-brand-dark: #18181b; /* Black/Dark text */
-    --color-brand-light: #ffffff; /* White background */
-    --color-brand-muted: #f4f6f8; /* Soft gray for muted areas */
+    /* ─── MELLBLUE Brand Colors (per GSM) ─────────────────────── */
+    --color-brand-blue: #90C9E9;        /* Primer: Light Ocean Blue */
+    --color-brand-blue-dark: #5aA8CF;   /* Darker tint of brand blue for hover/contrast */
+    --color-brand-yellow: #FFDE7C;      /* Sekunder: Cheerful Yellow */
+    --color-brand-dark: #000000;        /* Sekunder: Black — maximum contrast */
+    --color-brand-light: #ffffff;       /* Primer: White — clean, minimal */
+    --color-brand-muted: #EAF5FB;       /* Soft tint of brand blue for muted areas */
 }
 
 :root {
-    /* MELLBLUE Moodboard Theme */
-    --background: var(--color-brand-light);
-    --foreground: var(--color-brand-dark);
+    /* ─── MELLBLUE Theme (per GSM) ──────────────────────────────── */
+    --background: var(--color-brand-light);   /* #FFFFFF */
+    --foreground: var(--color-brand-dark);    /* #000000 */
 
     --card: var(--color-brand-light);
     --card-foreground: var(--color-brand-dark);
@@ -83,42 +83,44 @@
     --popover: var(--color-brand-light);
     --popover-foreground: var(--color-brand-dark);
 
+    /* Primary = #90C9E9, text on top = WHITE (GSM: blue bg → white text) */
     --primary: var(--color-brand-blue);
-    --primary-foreground: var(--color-brand-dark);
+    --primary-foreground: var(--color-brand-light);
 
+    /* Secondary = #FFDE7C yellow, text on top = black */
     --secondary: var(--color-brand-yellow);
     --secondary-foreground: var(--color-brand-dark);
 
     --muted: var(--color-brand-muted);
-    --muted-foreground: #71717a; /* zinc-500 */
+    --muted-foreground: #52748a;  /* blue-grey — stays readable on #EAF5FB */
 
-    --accent: var(--color-brand-yellow);
-    --accent-foreground: var(--color-brand-dark);
+    --accent: var(--color-brand-muted);
+    --accent-foreground: var(--color-brand-blue-dark);
 
     --destructive: oklch(0.577 0.245 27.325);
     --destructive-foreground: var(--color-brand-light);
 
-    --border: #e4e4e7; /* zinc-200 */
-    --input: #e4e4e7;
-    --ring: var(--color-brand-blue-dark);
+    --border: #c8e4f2;  /* subtle blue-tinted border */
+    --input: #c8e4f2;
+    --ring: var(--color-brand-blue);  /* focus ring = brand blue */
 
     --chart-1: var(--color-brand-blue);
     --chart-2: var(--color-brand-yellow);
     --chart-3: var(--color-brand-blue-dark);
     --chart-4: var(--color-brand-dark);
-    --chart-5: #e4e4e7;
+    --chart-5: #c8e4f2;
 
     --radius: 0.625rem;
 
-    /* Sidebar — Light Theme */
+    /* Sidebar */
     --sidebar: var(--color-brand-light);
     --sidebar-foreground: var(--color-brand-dark);
     --sidebar-primary: var(--color-brand-blue);
     --sidebar-primary-foreground: var(--color-brand-dark);
     --sidebar-accent: var(--color-brand-muted);
     --sidebar-accent-foreground: var(--color-brand-dark);
-    --sidebar-border: #e4e4e7;
-    --sidebar-ring: var(--color-brand-blue-dark);
+    --sidebar-border: #c8e4f2;
+    --sidebar-ring: var(--color-brand-blue);
 }
 
 @layer base {
@@ -133,7 +135,9 @@
     h1,
     h2,
     h3 {
-        @apply font-[family-name:var(--font-sans)] font-bold;
+        /* Poppins for all headings — per GSM typography */
+        font-family: var(--font-sans);
+        font-weight: 700;
     }
 
     /* Custom Selection Color */

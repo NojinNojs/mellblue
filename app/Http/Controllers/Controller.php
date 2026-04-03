@@ -16,7 +16,7 @@ abstract class Controller
             return null;
         }
 
-        // New storage paths (e.g. "products/xxx.webp", "payment-proofs/xxx.jpg")
+        // New storage paths (e.g. "products/xxx.webp", "payments/xxx.jpg")
         if (Storage::disk('public')->exists($path)) {
             return asset('storage/' . $path);
         }

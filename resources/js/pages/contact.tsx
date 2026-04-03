@@ -16,14 +16,13 @@ export default function Contact() {
                 {/* Header */}
                 <div className="mb-12">
                     <p className="mb-2 text-xs font-bold tracking-[0.2em] text-brand-blue-dark/60 uppercase">
-                        Get in touch
+                        Hubungi Kami
                     </p>
                     <h1 className="text-4xl font-bold tracking-tight text-foreground">
-                        Contact Us
+                        Kontak
                     </h1>
                     <p className="mt-3 text-base leading-relaxed text-muted-foreground">
-                        For orders, questions, or anything else — we're happy to
-                        help. The fastest way to reach us is via WhatsApp.
+                        Untuk pemesanan, pertanyaan, atau hal lainnya — kami siap membantu. Cara tercepat menghubungi kami adalah melalui WhatsApp.
                     </p>
                 </div>
 
@@ -45,7 +44,7 @@ export default function Contact() {
                     </div>
                     <div className="flex-1">
                         <p className="text-sm font-semibold opacity-80">
-                            Chat with us
+                            Chat bersama kami
                         </p>
                         <p className="text-lg font-bold">
                             {appData?.phone || 'WhatsApp'}
@@ -75,7 +74,7 @@ export default function Contact() {
                         </div>
                         <div>
                             <p className="text-xs text-muted-foreground">
-                                Phone
+                                Telepon
                             </p>
                             <p className="text-sm font-medium text-foreground">
                                 {appData?.phone || '-'}
@@ -125,10 +124,10 @@ export default function Contact() {
                         </div>
                         <div>
                             <p className="text-xs text-muted-foreground">
-                                Business Hours
+                                Jam Operasional
                             </p>
                             <p className="text-sm font-medium text-foreground">
-                                Mon – Sat, 09.00 – 18.00 WIB
+                                Senin – Sabtu, 09.00 – 18.00 WIB
                             </p>
                         </div>
                     </div>
@@ -137,21 +136,21 @@ export default function Contact() {
                 {/* FAQ */}
                 <div className="mt-10">
                     <h2 className="mb-4 text-base font-semibold text-foreground">
-                        Common Questions
+                        Pertanyaan Umum
                     </h2>
                     <div className="space-y-4">
                         {[
                             {
-                                q: 'How do I place an order?',
-                                a: 'Browse our products and add items to your cart, or message us on WhatsApp for a custom order.',
+                                q: 'Bagaimana cara memesan?',
+                                a: 'Kunjungi halaman produk kami dan pilih item yang diinginkan, atau hubungi kami melalui WhatsApp untuk pesanan khusus.',
                             },
                             {
-                                q: 'Do you deliver outside Jakarta?',
-                                a: 'No — we currently only deliver within the Jakarta area.',
+                                q: 'Apakah bisa pesan di luar Jakarta?',
+                                a: 'Saat ini kami hanya melayani pengiriman di wilayah Jakarta.',
                             },
                             {
-                                q: 'Do you accept bulk orders?',
-                                a: 'Yes. Contact us on WhatsApp for pricing and availability.',
+                                q: 'Apakah menerima pesanan dalam jumlah banyak?',
+                                a: 'Ya. Hubungi kami melalui WhatsApp untuk informasi harga dan ketersediaan.',
                             },
                         ].map((faq) => (
                             <div

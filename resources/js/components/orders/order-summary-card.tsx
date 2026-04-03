@@ -25,7 +25,7 @@ export function OrderSummaryCard({
             <CardHeader className="p-6">
                 <CardTitle className="flex items-center gap-2 text-xl">
                     <Package className="h-5 w-5 text-muted-foreground" />
-                    Items Ordered
+                    Pesanan Kamu
                 </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
@@ -59,7 +59,7 @@ export function OrderSummaryCard({
                                         </h4>
                                         {item.variant_name && (
                                             <p className="text-sm font-medium text-muted-foreground">
-                                                Variant: {item.variant_name}
+                                                Varian: {item.variant_name}
                                             </p>
                                         )}
                                         <p className="mt-1 text-sm text-muted-foreground">
@@ -89,25 +89,25 @@ export function OrderSummaryCard({
                     </div>
                     <div className="flex justify-between">
                         <span className="text-muted-foreground">
-                            Shipping Cost
+                            Ongkos Kirim
                         </span>
                         <span className="font-medium text-green-600">
                             {shippingCost === 0
-                                ? 'Free'
+                                ? 'Gratis'
                                 : formatCurrency(shippingCost)}
                         </span>
                     </div>
                     {uniqueCode > 0 && (
                         <div className="flex justify-between">
                             <span className="text-muted-foreground">
-                                Unique Code (Admin Fee)
+                                Kode Unik
                             </span>
                             <span>{formatCurrency(uniqueCode)}</span>
                         </div>
                     )}
                     <Separator className="my-2" />
                     <div className="flex items-center justify-between text-lg font-bold">
-                        <span>Total Amount</span>
+                        <span>Total Tagihan</span>
                         <span className="text-primary">
                             {formatCurrency(total)}
                         </span>

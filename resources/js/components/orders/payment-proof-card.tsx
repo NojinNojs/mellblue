@@ -32,7 +32,7 @@ export function PaymentProofCard({
             <CardHeader className="bg-muted/30 p-6 pb-4">
                 <CardTitle className="flex items-center gap-2 text-xl">
                     <CheckCircle className="h-5 w-5 text-muted-foreground" />
-                    Payment Confirmation
+                    Konfirmasi Pembayaran
                 </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
@@ -44,28 +44,27 @@ export function PaymentProofCard({
                             </div>
                         </div>
                         <h4 className="font-semibold text-green-900">
-                            Payment Uploaded
+                            Bukti Udah Diterima
                         </h4>
                         <p className="text-sm text-green-700">
-                            We are verifying your payment. This usually takes
-                            1-2 hours.
+                            Sabar ya, kami lagi ngecek pembayaranmu. Biasanya sih cepat, sekitar 1-2 jaman.
                         </p>
                         <p className="mt-2 text-xs text-green-600">
-                            Uploaded on{' '}
+                            Terunggah pada{' '}
                             {payment.created_at
-                                ? new Date(payment.created_at).toLocaleString()
-                                : 'just now'}
+                                ? new Date(payment.created_at).toLocaleString('id-ID')
+                                : 'baru aja banget'}
                         </p>
                     </div>
                 ) : (
                     <form onSubmit={onSubmit} className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="sender_account">
-                                Sender Account Name
+                                Nama Pengirim di Rekening
                             </Label>
                             <Input
                                 id="sender_account"
-                                placeholder="e.g. John Doe"
+                                placeholder="Misal: Rina Melati"
                                 value={data.sender_account_number}
                                 onChange={(e) =>
                                     setData(
@@ -78,7 +77,7 @@ export function PaymentProofCard({
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="proof_image">
-                                Upload Transfer Receipt
+                                Upload Bukti Transfer
                             </Label>
                             <Input
                                 id="proof_image"
@@ -100,7 +99,7 @@ export function PaymentProofCard({
                             className="w-full"
                             disabled={processing}
                         >
-                            {processing ? 'Uploading...' : 'Confirm Payment'}
+                            {processing ? 'Bentar ya, lagi dikirim...' : 'Kirim Bukti Pembayaran'}
                         </Button>
                     </form>
                 )}

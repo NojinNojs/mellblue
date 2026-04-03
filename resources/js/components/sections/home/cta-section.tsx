@@ -20,20 +20,20 @@ export function CtaSection() {
                     </div>
 
                     <div className="relative z-10 mx-auto max-w-2xl">
-                        <span className="mb-4 inline-block text-xs font-semibold tracking-widest text-brand-blue uppercase">
-                            A little note for you
+                        <span className="mb-4 inline-block text-xs font-semibold tracking-widest text-white/60 uppercase">
+                            Untuk kamu yang butuh reward hari ini
                         </span>
                         <h2 className="mb-4 font-display text-3xl font-normal text-white italic sm:text-4xl md:text-5xl">
-                            "Reward Yourself"
+                            "Manjakan Dirimu"
                         </h2>
                         <p className="mb-10 text-sm leading-relaxed text-white/70 sm:text-base">
-                            Indulge in the refreshing taste of Ocean Milk alongside our premium artisanal desserts. Treat yourself to the perfect balance of freshness and decadent flavor.
+                            Nikmati kesegaran Ocean Milk yang berpadu sempurna dengan dessert premium kami. Hadirkan keseimbangan rasa yang pas di setiap tegukan dan gigitan.
                         </p>
                         <Link
                             href="/products"
                             className="group inline-flex h-13 items-center justify-center gap-2.5 rounded-xl bg-white px-10 text-base font-semibold text-brand-blue-dark shadow-lg transition-all hover:-translate-y-0.5 hover:bg-brand-muted hover:shadow-xl"
                         >
-                            Order Now
+                            Pesan Sekarang
                             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                         </Link>
                     </div>

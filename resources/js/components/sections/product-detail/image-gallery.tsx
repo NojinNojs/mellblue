@@ -17,7 +17,7 @@ export function ImageGallery({ product }: ImageGalleryProps) {
             <div className="flex aspect-[3/4] w-full flex-col items-center justify-center rounded-xl border bg-muted/30">
                 <div className="h-16 w-16 opacity-20" />
                 <span className="mt-4 text-sm font-medium tracking-wider text-muted-foreground uppercase">
-                    No image available
+                    Gambar Tidak Tersedia
                 </span>
             </div>
         );

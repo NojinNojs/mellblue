@@ -10,56 +10,56 @@ const errorConfig: Record<
     { title: string; description: string }
 > = {
     301: {
-        title: 'Moved Permanently',
-        description: 'This page has moved to a new location.',
+        title: 'Halaman Pindah',
+        description: 'Wah, sepertinya halaman yang kamu cari sudah pindah ke tempat baru.',
     },
     302: {
-        title: 'Redirecting',
-        description: "You're being redirected.",
+        title: 'Lagi Dialihkan',
+        description: "Tunggu sebentar ya, kami sedang mengarahkanmu.",
     },
     400: {
-        title: 'Bad Request',
+        title: 'Permintaan Keliru',
         description:
-            'The request could not be understood. Please check your input and try again.',
+            'Aduh, sistem kami agak bingung dengan permintaan ini. Coba cek lagi ya.',
     },
     401: {
-        title: 'Unauthorized',
-        description: "You need to log in to access this page.",
+        title: 'Belum Masuk Nih',
+        description: "Kamu harus login dulu ya buat akses halaman ini.",
     },
     403: {
-        title: 'Forbidden',
-        description: "You don't have permission to access this page.",
+        title: 'Akses Dibatasi',
+        description: "Waduh, sepertinya kamu belum punya izin buat masuk ke halaman ini.",
     },
     404: {
-        title: 'Page Not Found',
+        title: 'Waduh, Kesasar?',
         description:
-            "The page you're looking for doesn't exist or has been moved.",
+            "Halaman yang kamu cari sepertinya nggak ada atau udah dipindah nih. Yuk balik ke jalan yang benar.",
     },
     419: {
-        title: 'Session Expired',
-        description: 'Your session has expired. Please refresh and try again.',
+        title: 'Sesi Habis',
+        description: 'Sesi kamu udah habis. Coba refresh halaman ini dan masuk lagi ya.',
     },
     429: {
-        title: 'Too Many Requests',
+        title: 'Terlalu Cepat!',
         description:
-            "You've made too many requests. Please wait a moment and try again.",
+            "Wah, permintaanmu terlalu banyak nih. Istirahat sebentar dan coba lagi nanti ya.",
     },
     500: {
-        title: 'Server Error',
+        title: 'Sistem Lagi Rewel',
         description:
-            "Something went wrong on our end. We're working on fixing it.",
+            "Aduh, dapur kami lagi ada sedikit kendala teknis. Teknisi kami lagi beresin kok, tunggu sebentar ya.",
     },
     503: {
-        title: 'Service Unavailable',
+        title: 'Lagi Berbenah',
         description:
-            'The service is temporarily down for maintenance. Please check back soon.',
+            'Kami sedang melakukan perbaikan agar pelayanan lebih maksimal. Coba balik lagi nanti ya.',
     },
 };
 
 export default function ErrorPage({ status }: ErrorPageProps) {
     const { title, description } = errorConfig[status] ?? {
-        title: 'Unexpected Error',
-        description: 'Something went wrong. Please try again.',
+        title: 'Ada yang Salah Nih',
+        description: 'Duh, terjadi kesalahan yang nggak terduga. Coba lagi atau hubungi kami ya.',
     };
 
     const isClientError = status >= 400 && status < 500;
@@ -104,13 +104,13 @@ export default function ErrorPage({ status }: ErrorPageProps) {
                             href="/"
                             className="inline-flex items-center rounded-lg bg-foreground px-5 py-2.5 text-sm font-medium text-background transition-opacity hover:opacity-80"
                         >
-                            Go to Homepage
+                            Balik ke Beranda
                         </Link>
                         <button
                             onClick={() => window.history.back()}
                             className="inline-flex items-center rounded-lg border px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
                         >
-                            Go Back
+                            Kembali ke Sebelumnya
                         </button>
                     </div>
                 </div>

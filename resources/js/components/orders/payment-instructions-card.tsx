@@ -22,7 +22,7 @@ export function PaymentInstructionsCard({
             <CardHeader className="bg-muted/30 p-6 pb-4">
                 <CardTitle className="flex items-center gap-2 text-xl">
                     <CreditCard className="h-5 w-5 text-muted-foreground" />
-                    Payment Instructions
+                    Cara Pembayaran
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6 p-6">
@@ -30,10 +30,9 @@ export function PaymentInstructionsCard({
                     <div className="flex gap-3">
                         <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
                         <div className="text-sm">
-                            <p className="font-medium">Important!</p>
+                            <p className="font-medium">Penting Banget!</p>
                             <p>
-                                Transfer exactly up to the last 3 digits to
-                                verify your payment automatically.
+                                Pastikan transfer nominal aslinya lengkap sampai 3 digit paling belakang ya, biar dicek otomatis oleh sistem 😎.
                             </p>
                         </div>
                     </div>
@@ -42,7 +41,7 @@ export function PaymentInstructionsCard({
                 <div className="space-y-4">
                     <div className="space-y-2">
                         <Label className="text-muted-foreground">
-                            Bank Destination
+                            Tujuan Transfer
                         </Label>
                         <div className="flex items-center justify-between rounded-lg border p-3">
                             <div className="flex items-center gap-3">
@@ -58,7 +57,7 @@ export function PaymentInstructionsCard({
 
                     <div className="space-y-2">
                         <Label className="text-muted-foreground">
-                            Account Number
+                            Nomor Rekening
                         </Label>
                         <div className="flex items-center gap-2">
                             <div className="flex-1 rounded-lg border bg-muted/50 p-3 font-mono text-lg font-bold tracking-wider">
@@ -80,7 +79,7 @@ export function PaymentInstructionsCard({
 
                     <div className="space-y-2">
                         <Label className="text-muted-foreground">
-                            Total Amount
+                            Total Pembayaran
                         </Label>
                         <div className="relative">
                             <div
@@ -94,7 +93,7 @@ export function PaymentInstructionsCard({
                                 </span>
                                 <div className="flex items-center gap-2 text-sm font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100">
                                     <Copy className="h-4 w-4" />
-                                    Click to Copy
+                                    Salin Sekarang
                                 </div>
                             </div>
                         </div>
