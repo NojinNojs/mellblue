@@ -149,7 +149,7 @@ Point your web server (Nginx or Apache) to the `public/` directory.
 
 ## 🧑‍💻 Author
 
-**Muhammad Raffi Aqsan** ([@NojinNojs](https://github.com/NojinNojs))
+**Nojin** ([@NojinNojs](https://github.com/NojinNojs))
 
 ---
 
