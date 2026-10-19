@@ -1,4 +1,4 @@
-# MELLBLUE — Premium Artisan Treats
+# MELLBLUE
 
 ![Laravel](https://img.shields.io/badge/Laravel-v12-FF2D20?style=for-the-badge&logo=laravel)
 ![React](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
@@ -7,7 +7,7 @@
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS_v4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 
-**MELLBLUE** is a modern, full-stack e-commerce platform for premium artisan food products. Built with the latest technologies, it features a complete order lifecycle — from browsing and checkout, to payment verification, shipping, and downloadable PDF receipts.
+Full-stack online food store built with Laravel, React, and Inertia.js. Handles product variants, checkout, payment proof uploads, order status tracking, and PDF receipts.
 
 ---
 
